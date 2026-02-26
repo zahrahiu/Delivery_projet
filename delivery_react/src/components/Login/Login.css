@@ -1,0 +1,183 @@
+.login-card-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 110vh;
+    background: #fbf4f4;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Poppins', sans-serif;
+}
+
+.login-card {
+    display: flex;
+    width: 900px;
+    height: 500px;
+    background: #fff;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+
+.login-left, .login-right {
+    flex: 1;
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-left {
+    background: linear-gradient(135deg, #4d5c71, #a5aead);
+    color: white;
+    position: relative;
+}
+
+.login-left h2 {
+    font-size: 52px;
+    margin-bottom: 16px;
+}
+
+.login-left p {
+    font-size: 17px;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    background: rgb(59, 78, 97);
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+}
+.input-group {
+    position: relative;
+}
+
+.show-btn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.input-group .icon {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.input-group input {
+    border: none;
+    background: transparent;
+    outline: none;
+    flex: 1;
+    color: #ffffff;
+    font-size: 17px;
+}
+
+
+
+.login-btn {
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #283442; /*7E6363FF*/
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: transform 0.3s;
+}
+
+.login-btn:hover {
+    transform: scale(1.05);
+}
+
+.forgot-link {
+    font-size: 17px;
+    color: #f0f0f0;
+    text-decoration: underline;
+    margin-top: 5px;
+    text-align: center;
+}
+
+/* Right side */
+.login-right h2 {
+    font-size: 38px;
+    margin-bottom: 60px;
+    color: #452020;
+}
+
+.login-right p {
+    font-size:17px;
+    margin-bottom: 80px;
+    color: #333;
+}
+
+.signup-btn {
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #7e6363, #452020);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 18px;
+    transition: transform 0.3s;
+}
+
+.signup-btn:hover {
+    transform: scale(1.05);
+}
+
+/* Circles */
+/* Circles Background - multiple shapes */
+.circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+/* Different circles */
+/* Circles Background - dynamic & layered */
+/* Base style for all circles */
+.circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.2;
+    z-index: 0;
+    animation: float 15s ease-in-out infinite alternate;
+}
+
+/* Floating animation */
+@keyframes float {
+    0% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-15px) translateX(10px); }
+    100% { transform: translateY(0px) translateX(0px); }
+}
+
+/* Example multiple circles */
+.circle-1  { width: 600px; height: 600px; top: -250px; right: -220px; background: linear-gradient(135deg, #7e6363, #592828); z-index: 0; }
+.circle-2  { width: 450px; height: 450px; top: -180px; right: -150px; background: linear-gradient(135deg, #203339, #4d8298); z-index: 1; }
+.circle-3  { width: 420px; height: 420px; bottom: -170px; right: 40px; background: linear-gradient(135deg, #070707, #3b4e61); z-index: 0; }
+.circle-4  { width: 130px; height: 130px; bottom: 40px; left: 140px; background: linear-gradient(135deg, #4d5c71, #7b5b61); z-index: 2; }
+
+/* Extra circles for lively effect */
+.circle-9  { width: 140px; height: 140px; top: 150px; right: 400px; background: linear-gradient(135deg, #7e6363, #452020); z-index: 2; }
+.circle-12 { width: 300px; height: 300px; bottom: -100px; right: -150px; background: linear-gradient(135deg, #203339, #4d8298); z-index: 0; }
+.circle-20 { width: 280px; height: 280px; bottom: -50px; left: -100px; background: linear-gradient(135deg, #7e6363, #452020); z-index: 0; }
+
+
+/* Responsive */
+@media (max-width: 900px) {
+    .login-card {
+        flex-direction: column;
+    }
+    .login-left, .login-right {
+        padding: 30px 20px;
+    }
+}

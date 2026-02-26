@@ -5,6 +5,7 @@ import packageImage from "../assets/undraw_deliveries_qutl.svg";
 import motorImage from "../assets/undraw_on-the-way_zwi3.svg";
 import colisPackage from "../assets/Hands - Box.png"
 import {FaEnvelope, FaMapMarkerAlt, FaPhoneAlt} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 import {
     FaTruck,
@@ -16,6 +17,7 @@ import {
 
 const Home: React.FC = () => {
     const [activeTab, setActiveTab] = useState("client");
+    const navigate = useNavigate();
 
     return (
         <div className="qrlib-container">
@@ -30,7 +32,7 @@ const Home: React.FC = () => {
                         <a href="#fonctionnalites">Fonctionnalités</a>
                         <a href="#comment-ca-marche">Comment ça marche</a>
                         <a href="#contact">Contactez nous</a>
-                        <button className="btn-inscription">Inscription</button>
+                        <button  onClick={() => navigate("/login")} className="btn-inscription">Inscription</button>
                     </div>
                 </div>
             </nav>
