@@ -4,14 +4,13 @@ import heroImage from "../assets/QribLik_LOGO.png";
 import packageImage from "../assets/undraw_deliveries_qutl.svg";
 import motorImage from "../assets/undraw_on-the-way_zwi3.svg";
 import colisPackage from "../assets/Hands - Box.png"
-import { } from "react-icons/fa";
+import {FaEnvelope, FaMapMarkerAlt, FaPhoneAlt} from "react-icons/fa";
 
 import {
     FaTruck,
     FaBell,
     FaMoneyBillWave,
     FaChartLine,FaBox, FaClipboardCheck, FaTruckMoving, FaCheckCircle,
-    FaMobileAlt,FaPhoneAlt, FaEnvelope, FaMapMarkerAlt,
     FaHeadset,
 } from "react-icons/fa";
 
@@ -235,6 +234,35 @@ const Home: React.FC = () => {
 
                     </div>
                 </div>
+                {/* CONTACT INFO CARDS */}
+                <div className="contact-cards">
+
+                    <div className="contact-card">
+                        <div className="card-icon">
+                            <FaEnvelope />
+                        </div>
+                        <h4>Email</h4>
+                        <p>contact@qriblik.ma</p>
+                    </div>
+
+                    <div className="contact-card">
+                        <div className="card-icon">
+                            <FaPhoneAlt />
+                        </div>
+                        <h4>Téléphone</h4>
+                        <p>+212 6 12 34 56 78</p>
+                    </div>
+
+                    <div className="contact-card">
+                        <div className="card-icon">
+                            <FaMapMarkerAlt />
+                        </div>
+                        <h4>Adresse</h4>
+                        <p>Casablanca, Maroc</p>
+                    </div>
+
+                </div>
+
             </section>
         </div>
     );

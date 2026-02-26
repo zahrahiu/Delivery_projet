@@ -469,6 +469,7 @@ body {
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 8px;
+    font-size: 18px;
 }
 
 textarea {
@@ -478,6 +479,7 @@ textarea {
     border: 1px solid #ccc;
     resize: vertical;
     min-height: 100px;
+    font-size: 18px;
 }
 
 .contact-form button {
@@ -486,7 +488,7 @@ textarea {
     border: none;
     background: #592828;
     color: #fff;
-    font-size: 16px;
+    font-size: 20px;
     cursor: pointer;
     transition: transform 0.3s ease;
 }
@@ -496,4 +498,43 @@ textarea {
 }
 
 
+/* CONTACT CARDS */
 
+.contact-cards {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.contact-card {
+    background: linear-gradient(135deg, #4d8298, #c3b1b1);
+    color: white;
+    padding: 30px 20px;
+    width: 250px;
+    text-align: center;
+    border-radius: 20px;
+    transition: 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.contact-card:hover {
+    transform: translateY(-8px);
+}
+
+.card-icon {
+    font-size: 40px;
+    margin-bottom: 15px;
+    color: #203339;
+}
+
+.contact-card h4 {
+    margin-bottom: 10px;
+    font-size: 20px;
+    color: #592828;
+}
+
+.contact-card p {
+    font-size: 20px;
+}
