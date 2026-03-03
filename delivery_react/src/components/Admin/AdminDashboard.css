@@ -1,0 +1,255 @@
+:root {
+    --primary-blue: #3b4e61;
+    --bg-light: #ffffff;
+    --sidebar-color: #ffffff;
+}
+
+.admin-container {
+    display: flex;
+    background-color: var(--bg-light);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 280px;
+    background-color: #FBF4F4;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e2e8f0;
+    border-top-right-radius: 5rem;
+    z-index: 10;
+}
+
+.upload-btn {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 30px; /* الرؤوس الدائرية بحال الصورة */
+    font-weight: bold;
+    margin: 20px 0;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.nav-item {
+    padding: 12px 15px;
+    color: #64748b;
+    display: flex;
+
+    align-items: center;
+    gap: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+.nav-item.active {
+    background-color: #eff6ff;
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+.nav-item span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+}
+
+/* التعديل على منطقة المحتوى باش تجي نقية */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    /* إذا بغيتي الوسط يكون رمادي خفيف والجنبات بيضين، زيدي هادي: */
+    background-color: #ffffff;
+}
+
+.top-header {
+    padding: 20px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff; /* هيدر أبيض */
+    /* حيدي أي border-bottom إذا بغيتي تلاحم كامل مع الخلفية */
+}
+
+.search-bar input {
+    background: #f1f5f9; /* هادي هي البلاصة اللي بقات gris في البحث */
+    border: black;
+    padding: 10px 20px;
+    border-radius: 20px;
+    width: 500px;
+}
+
+/* Stats Cards بحال الفولدرات ف التصميم */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* تغيير من 3 إلى 4 */
+    gap: 20px; /* تقليل الفجوة قليلاً لتناسب المساحة */
+    padding: 20px 40px;
+}
+.stat-card .icon {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #3b4e61;
+}
+
+.stat-card.blue {
+    background: var(--primary-blue);
+    color: white;
+}
+
+/* Table */
+.table-container {
+    padding: 0 40px;
+
+}
+
+.custom-table {
+    width: 100%;
+    background: #ffffff;
+    /* 1. التقويسة والـ Border الأساسي */
+    border-radius: 20px;
+    border: 1px solid #d6cece;
+
+    /* 2. هادي ضرورية باش الـ border-radius يبان وما يتقطعش */
+    border-collapse: separate;
+    border-spacing: 0;
+    overflow: hidden;
+
+    margin-top: 20px;
+}
+
+.custom-table th {
+    background: #f8fafc;
+
+    padding: 15px;
+    text-align: left;
+    color: #203339;
+    font-size: 13px;
+}
+
+.custom-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+
+/* Container ديال البروفايل باش يتحكم في تموضع القائمة */
+.user-profile-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px;
+    border-radius: 12px;
+    transition: background 0.3s;
+}
+
+.user-profile:hover {
+    background: #f1f5f9;
+}
+
+/* ستايل القائمة الصغيرة (Dropdown) */
+.profile-dropdown {
+    position: absolute;
+    top: 110%; /* تحت البروفايل مباشرة */
+    right: 0;
+    width: 200px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    z-index: 100;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-header {
+    padding: 10px;
+    font-weight: bold;
+}
+
+.dropdown-header p { margin: 0; color: #3b4e61; }
+.dropdown-header small { color: #64748b; font-size: 16px; }
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    font-size: 17px;
+    color: #4b5563;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.dropdown-item:hover {
+    background: #eff6ff;
+    color: #3b4e61;
+}
+
+.dropdown-item.logout {
+    color: #ef4444; /* لون أحمر للخروج */
+}
+
+.dropdown-item.logout:hover {
+    background: #fef2f2;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #f1f5f9;
+    margin: 5px 0;
+}
+
+.user-icon-trigger {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.user-icon-trigger:hover {
+    background-color: #f1f5f9;
+}
+
+.main-user-icon {
+    font-size: 2.5rem; /* كبّرنا الأيقونة باش تبان واضحة */
+    color: #3b4e61;    /* استعملنا لون الـ Primary Blue ديالك */
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: 120%;
+    right: 0;
+    width: 200px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    z-index: 100;
+}

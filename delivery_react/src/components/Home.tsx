@@ -18,7 +18,19 @@ import {
 const Home: React.FC = () => {
     const [activeTab, setActiveTab] = useState("client");
     const navigate = useNavigate();
+    const [selectedCity, setSelectedCity] = useState("Larache");
 
+    const cities = [
+        { name: "Larache", price: 40 },
+        { name: "Tanger", price: 50 },
+        { name: "Tétouan", price: 45 },
+        { name: "Agadir", price: 55 },
+        { name: "Taroudant", price: 48 },
+    ];
+
+    const selectedCityData = cities.find(
+        (city) => city.name === selectedCity
+    );
     return (
         <div className="qrlib-container">
             {/* NAVBAR */}
@@ -37,7 +49,6 @@ const Home: React.FC = () => {
                 </div>
             </nav>
 
-            {/* HERO */}
             <section className="hero">
                 <div className="hero-container">
                     <div className="hero-content">
@@ -202,6 +213,46 @@ const Home: React.FC = () => {
                     </div>
                 </div>
             </section>
+
+            <section className="pricing-dark">
+                <div className="pricing-container">
+
+                    <span className="pricing-badge">Couverture et tarifs</span>
+
+                    <h2 className="pricing-title">
+                        Prix de livraison par ville
+                    </h2>
+
+                    <p className="pricing-subtitle">
+                        Recherchez une ville pour voir les tarifs de livraison standard et premium.
+                    </p>
+
+                    {/* Select */}
+                    <div className="select-wrapper">
+                        <select
+                            value={selectedCity}
+                            onChange={(e) => setSelectedCity(e.target.value)}
+                        >
+                            {cities.map((city, index) => (
+                                <option key={index} value={city.name}>
+                                    {city.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Result */}
+                    <div className="price-result">
+                        <span className="city-name">{selectedCityData?.name}</span>
+                        <span className="city-price">
+        {selectedCityData?.price} DH
+      </span>
+                    </div>
+
+                </div>
+            </section>
+
+            <hr/>
 
             {/* FOOTER */}
             {/* CONTACT SECTION */}

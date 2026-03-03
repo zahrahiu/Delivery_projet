@@ -411,7 +411,6 @@ body {
 
 .contact {
     padding: 80px 5%;
-    background: #fff;
     color: #592828;
 }
 
@@ -537,4 +536,77 @@ textarea {
 
 .contact-card p {
     font-size: 20px;
+}
+
+
+.pricing-dark {
+    padding: 120px 20px;
+    text-align: center;
+    color: rgb(7, 7, 7);
+}
+
+.pricing-container {
+    max-width: 700px;
+    margin: auto;
+}
+
+.pricing-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border: 1px solid rgb(69, 32, 32);
+    border-radius: 29px;
+    font-size: 23px;
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+
+.pricing-title {
+    font-size: 48px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.pricing-subtitle {
+    font-size: 21px;
+    color: #452020;
+    margin-bottom: 40px;
+}
+
+.select-wrapper select {
+    width: 100%;
+    padding: 16px;
+    background: #3b4e61;
+    border: 1px solid rgb(255, 255, 255);
+    border-radius: 19px;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+
+    outline: none;
+    margin-bottom: 30px;
+}
+
+.price-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1d2730;
+    padding: 20px 25px;
+    border-radius: 16px;
+    border: 1px solid rgb(255, 255, 255);
+    font-size: 20px;
+}
+
+.city-name {
+    font-weight: 700;
+    color: rgb(255, 255, 255);
+}
+
+.city-price {
+    color: #ffffff; /* gold color like screenshot */
+    font-weight: 700;
+}
+
+hr{
+    font-size: 30px;
 }
