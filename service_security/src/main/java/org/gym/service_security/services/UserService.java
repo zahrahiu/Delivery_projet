@@ -13,4 +13,5 @@ public interface UserService {
     void deleteUser(Integer id);
     UserResponseDTO assignRoleToUser(Integer userId, String roleName);
     UserResponseDTO updateUserStatus(Integer id, Boolean active);
+    UserResponseDTO updateUser(Integer id, UserRequestDTO request);
 }

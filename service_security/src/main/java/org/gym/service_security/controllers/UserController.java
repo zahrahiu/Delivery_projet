@@ -285,4 +285,13 @@ public class UserController {
     public ResponseEntity<String> getAdminDashboard() {
         return ResponseEntity.ok("Welcome to Admin Dashboard");
     }
+
+    // --- UPDATE USER ---
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Integer id, @RequestBody UserRequestDTO request) {
+        // هاد الدالة خاصك تزيديها فـ UserService
+        UserResponseDTO response = userService.updateUser(id, request);
+        return ResponseEntity.ok(response);
+    }
 }

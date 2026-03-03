@@ -10,9 +10,9 @@ public class UserRequestDTO {
     private String lastName;
     private String email;
     private String password;
-    private String phoneNumber;
-    private String address;
-    private String city;
+    private String phone; // خاص تكون phone ماشي phoneNumber باش تفهمها React
     private String cni;
+    private String zone;  // خاص تكون zone ماشي city
+    private String address;
     private RoleType role;
 }

@@ -116,4 +116,30 @@ public class UserServiceImpl implements UserService {
 
         return userMapper.Entity_to_DTO(updatedUser);
     }
+
+    @Override
+    public UserResponseDTO updateUser(Integer id, UserRequestDTO request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        // تحديث المعلومات
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+
+        // تأكدي واش الإيميل تبدل ومستعملش من طرف مستخدم آخر
+        if (!user.getEmail().equals(request.getEmail())) {
+            if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+                throw new RuntimeException("Email déjà utilisé");
+            }
+            user.setEmail(request.getEmail());
+        }
+
+        // إلا صيفطتي باسورد جديد، هاشيه وحفظيه
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        User savedUser = userRepository.save(user);
+        return userMapper.Entity_to_DTO(savedUser);
+    }
 }

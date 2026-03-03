@@ -7,18 +7,18 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // Import add
+import org.springframework.security.crypto.password.PasswordEncoder;    // Import add
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
-
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -27,6 +27,12 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 public class SecurityConfig {
 
     private final RsaKeys rsaKeys;
+
+    // ضروري باش السيرفيس يقدر يشفر الباسورد
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
@@ -49,11 +55,8 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
-
-
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/profiles/**").hasRole("ADMIN")
                         .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/profiles/**").hasRole("ADMIN")
-
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
@@ -64,7 +67,6 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        // التحقق من التوكن باستعمال الـ Public Key فقط
         return NimbusJwtDecoder.withPublicKey(rsaKeys.publicKey()).build();
     }
 

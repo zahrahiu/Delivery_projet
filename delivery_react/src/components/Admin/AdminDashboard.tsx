@@ -1,112 +1,99 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import './AdminDashboard.css';
-import {
-    FaTruck, FaUsers, FaBoxOpen, FaChartLine, FaPlus,
-    FaSignOutAlt, FaCog, FaPalette, FaUserCircle,
-    FaHeadset
-} from "react-icons/fa";
-import heroImage from "../../assets/QribLik_LOGO.png";
+import Sidebar from "./Sidebar";
+import TopHeader from "./TopHeader";
+import DispatchersTab from "./DispatchersTab";
+import { FaHeadset, FaBoxOpen, FaTruckLoading, FaChartLine } from "react-icons/fa";
 
 const AdminDashboard: React.FC = () => {
+    const [activeTab, setActiveTab] = useState("dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [dispatchersCount, setDispatchersCount] = useState(0);
+
+    const fetchCount = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get("http://localhost:8081/api/profiles", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setDispatchersCount(response.data.length);
+        } catch (error) {
+            console.error("Error fetching count:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCount();
+    }, []);
 
     return (
         <div className="admin-container">
-            {/* Sidebar */}
-            <aside className="sidebar">
-                <div className="sidebar-header">
-                    <img src={heroImage} alt="Logo" className="logo" />
-                </div>
-                <button className="upload-btn">+ New Delivery</button>
-                <nav className="nav-menu">
-                    <div className="nav-item active"><span>📊</span> Dashboard</div>
-                    <div className="nav-item"><span>📦</span> All Orders</div>
-                    <div className="nav-item"><span>🚚</span> Livreurs</div>
-                    {/* إضافة Dispatchers هنا */}
-                    <div className="nav-item"><span><FaHeadset /></span> Dispatchers</div>
-                    <div className="nav-item"><span>👥</span> Clients</div>
-                </nav>
-            </aside>
+            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            {/* Main Content */}
             <main className="main-content">
-                <header className="top-header">
-                    <div className="search-bar">
-                        <input type="text" placeholder="Search orders, dispatchers..." />
-                    </div>
-
-                    <div className="user-profile-container">
-                        <div className="user-icon-trigger" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                            <FaUserCircle className="main-user-icon" />
-                        </div>
-
-                        {isMenuOpen && (
-                            <div className="profile-dropdown">
-                                <div className="dropdown-header">
-                                    <p>Welcome Admin!</p>
-                                    <small>Admin Control Panel</small>
-                                </div>
-                                <hr />
-                                <div className="dropdown-item"><FaCog /> Parameters</div>
-                                <div className="dropdown-item"><FaPalette /> Theme</div>
-                                <hr />
-                                <div className="dropdown-item logout"><FaSignOutAlt /> Logout</div>
-                            </div>
-                        )}
-                    </div>
-                </header>
+                <TopHeader isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} activeTab={activeTab} />
 
                 <section className="content-body">
-                    <h2 className="section-title">Quick Access</h2>
-                    <div className="stats-grid">
-                        <div className="stat-card blue">
-                            <div className="icon">📦</div>
-                            <p>Total Orders</p>
-                            <h3>124</h3>
-                        </div>
-                        <div className="stat-card">
-                            <div className="icon">🚚</div>
-                            <p>On the Way</p>
-                            <h3>45</h3>
-                        </div>
-                        {/* إضافة بطاقة Dispatchers هنا */}
-                        <div className="stat-card">
-                            <div className="icon"><FaHeadset color="#3b4e61"/></div>
-                            <p>Active Dispatchers</p>
-                            <h3>8</h3>
-                        </div>
-                        <div className="stat-card">
-                            <div className="icon">✅</div>
-                            <p>Delivered</p>
-                            <h3>68</h3>
-                        </div>
-                    </div>
+                    {activeTab === "dashboard" && (
+                        <div className="dashboard-welcome">
+                            <h1 className="welcome-text">Bonjour, Admin! ✨</h1>
+                            <p className="subtitle-text">Voici ce qui se passe aujourd'hui :</p>
 
-                    <div className="table-container">
-                        <h3 className="section-title">Recent Shipments</h3>
-                        <table className="custom-table">
-                            <thead>
-                            <tr>
-                                <th>Order ID</th>
-                                <th>Client</th>
-                                <th>Livreur</th>
-                                <th>Dispatcher</th> {/* عمود جديد */}
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>#ORD-7721</td>
-                                <td>Ahmed Tazi</td>
-                                <td>Yassine Mo</td>
-                                <td>Reda.A</td> {/* اسم الموزع */}
-                                <td><span className="status pending">In Delivery</span></td>
-                                <td><button className="btn-view">View</button></td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                            <div className="stats-grid">
+                                {/* Card 1: Dispatchers */}
+                                <div className="stat-card glass pink" onClick={() => setActiveTab("dispatchers")}>
+                                    <div className="stat-icon"><FaHeadset /></div>
+                                    <div className="stat-info">
+                                        <h3>Dispatchers</h3>
+                                        <p className="stat-number">{dispatchersCount}</p>
+                                    </div>
+                                </div>
+
+                                {/* Card 2: Orders */}
+                                <div className="stat-card glass blue">
+                                    <div className="stat-icon"><FaBoxOpen /></div>
+                                    <div className="stat-info">
+                                        <h3>Orders</h3>
+                                        <p className="stat-number">124</p>
+                                    </div>
+                                </div>
+
+                                {/* Card 3: Deliveries */}
+                                <div className="stat-card glass purple">
+                                    <div className="stat-icon"><FaTruckLoading /></div>
+                                    <div className="stat-info">
+                                        <h3>Deliveries</h3>
+                                        <p className="stat-number">85</p>
+                                    </div>
+                                </div>
+
+                                {/* Card 4: Performance */}
+                                <div className="stat-card glass green">
+                                    <div className="stat-icon"><FaChartLine /></div>
+                                    <div className="stat-info">
+                                        <h3>Success Rate</h3>
+                                        <p className="stat-number">98%</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* يمكنك إضافة Chart هنا مستقبلاً */}
+                            <div className="quick-actions">
+                                <h3>Quick Actions 🚀</h3>
+                                <div className="action-buttons">
+                                    <button className="btn-cute" onClick={() => setActiveTab("dispatchers")}>Manage Staff</button>
+                                    <button className="btn-cute-outline">View Reports</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "dispatchers" && (
+                        <DispatchersTab onDispatchersUpdate={fetchCount} />
+                    )}
+
+                    {activeTab === "livreurs" && <div className="placeholder-view">🚚 Drivers Management Coming Soon...</div>}
                 </section>
             </main>
         </div>

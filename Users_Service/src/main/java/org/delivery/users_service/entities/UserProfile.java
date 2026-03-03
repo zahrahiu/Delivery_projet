@@ -13,10 +13,11 @@ public class UserProfile {
     private String firstName;
     private String lastName;
     private String email;
+    private String password;
+    private String phone; // خاص تكون phone ماشي phoneNumber باش تفهمها React
     private String cni;
-    private String phoneNumber;
+    private String zone;  // خاص تكون zone ماشي city
     private String address;
-    private String city;
 
     @Enumerated(EnumType.STRING)
     private RoleType role;
