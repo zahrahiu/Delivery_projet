@@ -31,33 +31,28 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public UserResponseDTO createUserProfile(UserRequestDTO request) {
-        // 1. تحضير الطلب للسيكورتي سيرفيس (Plain Password)
-        // السيكورتي سيرفيس هو اللي غيشفر الباسورد عندو فالداتابيز ديالو
+        // 1. مناداة السيكورتي سيرفيس لإنشاء الحساب
         Map<String, Object> securityReq = new HashMap<>();
         securityReq.put("firstName", request.getFirstName());
         securityReq.put("lastName", request.getLastName());
         securityReq.put("email", request.getEmail());
         securityReq.put("password", request.getPassword());
+        securityReq.put("role", Collections.singleton((request.getRole() != null) ? request.getRole().name() : "LIVREUR"));
 
-        // تحويل الـ Enum لـ String باش ميبقاش مشكل فالـ JSON
-        String roleName = (request.getRole() != null) ? request.getRole().name() : "DISPATCHER";
-        securityReq.put("role", Collections.singleton(roleName));
-
-        // 2. مناداة السيكورتي سيرفيس
         Map<String, Object> securityResponse = securityClient.createAccount(securityReq);
-
-        // استخراج الـ ID اللي رجع لينا (تأكدي أن السيكورتي سيرفيس كيرجع حقل سميتو "id" أو "userId")
         Integer generatedUserId = (Integer) securityResponse.get("id");
         if (generatedUserId == null) generatedUserId = (Integer) securityResponse.get("userId");
 
-        // 3. حفظ البروفيل فالداتابيز المحلية مع تشفير الباسورد
+        // 2. التحويل باستخدام المابر اليدوي
         UserProfile profile = mapper.toEntity(request);
         profile.setUserId(generatedUserId);
 
+        // 3. تشفير الباسورد قبل الحفظ
         if (request.getPassword() != null) {
             profile.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
+        // 4. الحفظ
         UserProfile savedProfile = repository.save(profile);
         return mapper.toDTO(savedProfile);
     }
@@ -65,16 +60,14 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     @Transactional
     public UserResponseDTO updateUserProfile(Integer id, UserRequestDTO request) {
-        // 1. جلب البروفيل الحالي
         UserProfile existingProfile = repository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Dispatcher non trouvé ID: " + id));
+                .orElseThrow(() -> new NoSuchElementException("User non trouvé ID: " + id));
 
-        // 2. تحديث السيكورتي سيرفيس (عبر الـ userId المخزن سابقا)
+        // 1. تحديث السيكورتي سيرفيس
         Map<String, Object> securityReq = new HashMap<>();
         securityReq.put("firstName", request.getFirstName());
         securityReq.put("lastName", request.getLastName());
         securityReq.put("email", request.getEmail());
-
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             securityReq.put("password", request.getPassword());
         }
@@ -82,10 +75,10 @@ public class UserProfileServiceImpl implements UserProfileService {
         try {
             securityClient.updateAccount(existingProfile.getUserId(), securityReq);
         } catch (Exception e) {
-            throw new RuntimeException("Erreur de synchronisation avec Security-Service: " + e.getMessage());
+            throw new RuntimeException("Erreur de synchronisation: " + e.getMessage());
         }
 
-        // 3. تحديث معلومات البروفيل محليا
+        // 2. تحديث الحقول محليا (باستخدام المابر لتحديث القيم)
         existingProfile.setFirstName(request.getFirstName());
         existingProfile.setLastName(request.getLastName());
         existingProfile.setEmail(request.getEmail());
@@ -93,33 +86,32 @@ public class UserProfileServiceImpl implements UserProfileService {
         existingProfile.setCni(request.getCni());
         existingProfile.setZone(request.getZone());
         existingProfile.setAddress(request.getAddress());
+        existingProfile.setVehicleType(request.getVehicleType());
+        existingProfile.setMatricule(request.getMatricule());
+        existingProfile.setPermisNumber(request.getPermisNumber());
+        existingProfile.setRole(request.getRole());
 
-        // إذا تم تغيير الباسورد، نشفروه محليا أيضا
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             existingProfile.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        UserProfile updatedProfile = repository.save(existingProfile);
-        return mapper.toDTO(updatedProfile);
+        return mapper.toDTO(repository.save(existingProfile));
     }
 
     @Override
     public UserResponseDTO getUserProfile(Integer id) {
-        UserProfile profile = repository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("UserProfile not found ID: " + id));
-        return mapper.toDTO(profile);
+        return mapper.toDTO(repository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User not found ID: " + id)));
     }
 
     @Override
     public List<UserResponseDTO> getAllProfiles() {
-        return repository.findAll().stream()
-                .map(mapper::toDTO)
-                .toList();
+        return repository.findAll().stream().map(mapper::toDTO).toList();
     }
 
     @Override
     public void deleteProfile(Integer id) {
-        if (!repository.existsById(id)) throw new NoSuchElementException("ID introuvable: " + id);
+        if (!repository.existsById(id)) throw new NoSuchElementException("ID introuvable");
         repository.deleteById(id);
     }
 }

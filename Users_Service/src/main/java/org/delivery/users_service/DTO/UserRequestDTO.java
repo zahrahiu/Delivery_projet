@@ -15,4 +15,7 @@ public class UserRequestDTO {
     private String zone;  // خاص تكون zone ماشي city
     private String address;
     private RoleType role;
+    private String vehicleType;
+    private String matricule;
+    private String permisNumber;
 }

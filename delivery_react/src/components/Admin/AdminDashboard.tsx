@@ -1,99 +1,158 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { FaTruck, FaUsers, FaBox, FaMoneyBillWave } from "react-icons/fa";
 import './AdminDashboard.css';
 import Sidebar from "./Sidebar";
 import TopHeader from "./TopHeader";
 import DispatchersTab from "./DispatchersTab";
-import { FaHeadset, FaBoxOpen, FaTruckLoading, FaChartLine } from "react-icons/fa";
+import LivreursTab from "./LivreursTab";
+
+
+const deliveryData = [
+    { month: 'Jan', delivered: 400, returned: 50 },
+    { month: 'Feb', delivered: 700, returned: 80 },
+    { month: 'Mar', delivered: 600, returned: 120 },
+    { month: 'Apr', delivered: 900, returned: 90 },
+    { month: 'May', delivered: 1100, returned: 100 },
+];
+
+const statusData = [
+    { name: 'Livré', value: 65, color: '#00C49F' },
+    { name: 'En cours', value: 25, color: '#FFBB28' },
+    { name: 'Retourné', value: 10, color: '#FF8042' },
+];
 
 const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [dispatchersCount, setDispatchersCount] = useState(0);
+
+    // --- هادو هما لي كانو ناقصينك باش يخدم الـ Popup والـ Theme ---
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [darkMode, setDarkMode] = useState(false);
 
     const fetchCount = async () => {
         try {
             const token = localStorage.getItem("token");
-            const response = await axios.get("http://localhost:8081/api/profiles", {
+            const res = await axios.get("http://localhost:8081/api/profiles", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setDispatchersCount(response.data.length);
-        } catch (error) {
-            console.error("Error fetching count:", error);
-        }
+            setDispatchersCount(res.data.length);
+        } catch (error) { console.error("Error fetching count:", error); }
     };
 
     useEffect(() => {
         fetchCount();
     }, []);
 
+    // دالة لتبديل الـ Theme
+    const toggleTheme = () => {
+        setDarkMode(!darkMode);
+    };
+
     return (
-        <div className="admin-container">
+        // زدت class "dark-mode" هنا باش يتحكم ف الألوان إلا بغيتي تطوريها
+        <div className={`admin-container ${darkMode ? 'dark-theme' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
             <main className="main-content">
-                <TopHeader isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} activeTab={activeTab} />
+                {/* دابا صيفطنا كاع الـ Props لي كيحتاجهم الـ Header */}
+                <TopHeader
+                    activeTab={activeTab}
+                    isMenuOpen={isMenuOpen}
+                    setIsMenuOpen={setIsMenuOpen}
+                    darkMode={darkMode}
+                    toggleTheme={toggleTheme}
+                />
 
                 <section className="content-body">
                     {activeTab === "dashboard" && (
-                        <div className="dashboard-welcome">
-                            <h1 className="welcome-text">Bonjour, Admin! ✨</h1>
-                            <p className="subtitle-text">Voici ce qui se passe aujourd'hui :</p>
+                        <div className="dashboard-wrapper">
 
-                            <div className="stats-grid">
-                                {/* Card 1: Dispatchers */}
-                                <div className="stat-card glass pink" onClick={() => setActiveTab("dispatchers")}>
-                                    <div className="stat-icon"><FaHeadset /></div>
-                                    <div className="stat-info">
-                                        <h3>Dispatchers</h3>
-                                        <p className="stat-number">{dispatchersCount}</p>
-                                    </div>
+                            {/* Stats Cards */}
+                            <div className="stats-grid-top">
+                                <div className="stat-item purple-light">
+                                    <div className="icon-circle"><FaBox /></div>
+                                    <div className="texts"><span>Total Colis</span> <h2>2,840</h2></div>
+                                </div>
+                                <div className="stat-item blue-light">
+                                    <div className="icon-circle"><FaTruck /></div>
+                                    <div className="texts"><span>Livreurs Actifs</span> <h2>45</h2></div>
+                                </div>
+                                <div className="stat-item green-light">
+                                    <div className="icon-circle"><FaUsers /></div>
+                                    <div className="texts"><span>Clients</span> <h2>1,205</h2></div>
+                                </div>
+                                <div className="stat-item orange-light">
+                                    <div className="icon-circle"><FaMoneyBillWave /></div>
+                                    <div className="texts"><span>COD Collected</span> <h2>45,000 DH</h2></div>
+                                </div>
+                            </div>
+
+                            <div className="charts-main-section">
+                                <div className="chart-card area-card">
+                                    <h3>Statistiques des Livraisons 📈</h3>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <AreaChart data={deliveryData}>
+                                            <defs>
+                                                <linearGradient id="colorDel" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                                                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <XAxis dataKey="month" axisLine={false} tickLine={false} />
+                                            <YAxis hide />
+                                            <Tooltip />
+                                            <Area type="monotone" dataKey="delivered" stroke="#8884d8" fillOpacity={1} fill="url(#colorDel)" strokeWidth={3} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
                                 </div>
 
-                                {/* Card 2: Orders */}
-                                <div className="stat-card glass blue">
-                                    <div className="stat-icon"><FaBoxOpen /></div>
-                                    <div className="stat-info">
-                                        <h3>Orders</h3>
-                                        <p className="stat-number">124</p>
-                                    </div>
-                                </div>
-
-                                {/* Card 3: Deliveries */}
-                                <div className="stat-card glass purple">
-                                    <div className="stat-icon"><FaTruckLoading /></div>
-                                    <div className="stat-info">
-                                        <h3>Deliveries</h3>
-                                        <p className="stat-number">85</p>
-                                    </div>
-                                </div>
-
-                                {/* Card 4: Performance */}
-                                <div className="stat-card glass green">
-                                    <div className="stat-icon"><FaChartLine /></div>
-                                    <div className="stat-info">
-                                        <h3>Success Rate</h3>
-                                        <p className="stat-number">98%</p>
+                                <div className="chart-card pie-card">
+                                    <h3>État des Colis 📦</h3>
+                                    <ResponsiveContainer width="100%" height={250}>
+                                        <PieChart>
+                                            <Pie data={statusData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                                {statusData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                                            </Pie>
+                                            <Tooltip />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="pie-labels">
+                                        {statusData.map(s => <div key={s.name}><span style={{background: s.color}}></span> {s.name}</div>)}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* يمكنك إضافة Chart هنا مستقبلاً */}
-                            <div className="quick-actions">
-                                <h3>Quick Actions 🚀</h3>
-                                <div className="action-buttons">
-                                    <button className="btn-cute" onClick={() => setActiveTab("dispatchers")}>Manage Staff</button>
-                                    <button className="btn-cute-outline">View Reports</button>
-                                </div>
+                            <div className="recent-activity-section">
+                                <h3>Dernières Expéditions 🚚</h3>
+                                <table className="activity-table">
+                                    <thead>
+                                    <tr>
+                                        <th>ID Colis</th>
+                                        <th>Client</th>
+                                        <th>Livreur</th>
+                                        <th>Ville</th>
+                                        <th>Status</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr><td>#LM-9021</td><td>Ahmed Ali</td><td>Yassine</td><td>Casablanca</td><td><span className="badge green">Livré</span></td></tr>
+                                    <tr><td>#LM-9022</td><td>Sara Noor</td><td>Karim</td><td>Rabat</td><td><span className="badge yellow">En cours</span></td></tr>
+                                    <tr><td>#LM-9023</td><td>Mehdi H.</td><td>Omar</td><td>Tangier</td><td><span className="badge red">Retourné</span></td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     )}
 
-                    {activeTab === "dispatchers" && (
-                        <DispatchersTab onDispatchersUpdate={fetchCount} />
+                    {activeTab === "dispatchers" && <DispatchersTab onDispatchersUpdate={fetchCount} />}
+                    {activeTab === "livreurs" && (
+                        <LivreursTab onLivreursUpdate={(count) => {
+                            // دابا هاد الكود غيخدم حيت LiversTab كيعرف شنو هي onLivreursUpdate
+                            console.log("Nombre de livreurs mis à jour :", count);
+                        }} />
                     )}
-
-                    {activeTab === "livreurs" && <div className="placeholder-view">🚚 Drivers Management Coming Soon...</div>}
                 </section>
             </main>
         </div>

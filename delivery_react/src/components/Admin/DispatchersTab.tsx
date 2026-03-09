@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
     FaEdit, FaTrash, FaArrowLeft, FaSpinner,
-    FaEye, FaToggleOn, FaToggleOff, FaTimes
+    FaEye, FaTimes, FaChevronLeft, FaChevronRight
 } from "react-icons/fa";
 
-// 1. تعريف شكل البيانات اللي جاية من الـ Backend
 interface Dispatcher {
     userId: number;
     firstName: string;
@@ -18,13 +17,11 @@ interface Dispatcher {
     active?: boolean;
 }
 
-// 2. تعريف الـ Props باش الـ AdminDashboard ما يبقاش يعطي Error
 interface Props {
     onDispatchersUpdate?: (count: number) => void;
 }
 
 const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
-    // --- States ---
     const [dispatchers, setDispatchers] = useState<Dispatcher[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -32,36 +29,29 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
     const [selectedDispatcher, setSelectedDispatcher] = useState<Dispatcher | null>(null);
     const [showDetails, setShowDetails] = useState(false);
 
+    // --- 1. States ديال الـ Pagination ---
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
     const initialForm = {
-        userId: "",
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        phone: "",
-        cni: "",
-        zone: "",
-        address: "",
-        role: "DISPATCHER"
+        userId: "", firstName: "", lastName: "", email: "",
+        password: "", confirmPassword: "", phone: "",
+        cni: "", zone: "", address: "", role: "DISPATCHER"
     };
     const [formData, setFormData] = useState(initialForm);
 
-    // --- Config ---
     const API_URL = "http://localhost:8081/api/profiles";
     const getAuthHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
 
-    // --- Fetch Data ---
     const fetchDispatchers = async () => {
         try {
             const response = await axios.get(API_URL, { headers: getAuthHeader() });
-            const data = response.data;
-            setDispatchers(data);
 
-            // تحديث الـ Count ف الـ Dashboard باش يحيد الـ Error
-            if (onDispatchersUpdate) {
-                onDispatchersUpdate(data.length);
-            }
+            // --- التعديل هنا: كنصفيو فقط الـ DISPATCHER ---
+            const onlyDispatchers = response.data.filter((user: any) => user.role === "DISPATCHER");
+
+            setDispatchers(onlyDispatchers);
+            if (onDispatchersUpdate) onDispatchersUpdate(onlyDispatchers.length);
         } catch (error) {
             console.error("Error fetching data:", error);
         }
@@ -69,7 +59,14 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
 
     useEffect(() => { fetchDispatchers(); }, []);
 
-    // --- Handlers ---
+    // --- 2. Logic ديال حساب الصفحات ---
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = dispatchers.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(dispatchers.length / itemsPerPage);
+
+    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -99,27 +96,17 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-
-        const currentUserId = formData.userId;
-
         try {
-            if (isEditing && currentUserId) {
-                // UPDATE (PUT) باستخدام الـ userId اللي لقيناه
-                await axios.put(`${API_URL}/${currentUserId}`, formData, { headers: getAuthHeader() });
-                alert("Mis à jour avec succès !");
+            if (isEditing) {
+                await axios.put(`${API_URL}/${formData.userId}`, formData, { headers: getAuthHeader() });
             } else {
-                // CREATE (POST)
                 await axios.post(API_URL, formData, { headers: getAuthHeader() });
-                alert("Créé avec succès !");
             }
             cancelAction();
             fetchDispatchers();
         } catch (error: any) {
-            console.error("API Error:", error.response?.data);
-            alert("Erreur: " + (error.response?.data?.message || "Internal Server Error"));
-        } finally {
-            setIsLoading(false);
-        }
+            alert("Erreur: " + (error.response?.data?.message || "Error"));
+        } finally { setIsLoading(false); }
     };
 
     const handleDelete = async (id: number) => {
@@ -127,9 +114,7 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
             try {
                 await axios.delete(`${API_URL}/${id}`, { headers: getAuthHeader() });
                 fetchDispatchers();
-            } catch (error) {
-                alert("Erreur lors de la suppression.");
-            }
+            } catch (error) { alert("Erreur."); }
         }
     };
 
@@ -138,7 +123,7 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
             {!isFormOpen ? (
                 <>
                     <div className="header-flex">
-                        <h2 className="section-title">Manage Dispatchers</h2>
+                        <h2 className="section-title">Manage Dispatchers </h2>
                         <button className="btn-add" onClick={() => { setIsEditing(false); setIsFormOpen(true); }}>
                             + Add New
                         </button>
@@ -155,7 +140,8 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
                             </tr>
                             </thead>
                             <tbody>
-                            {dispatchers.map((d) => (
+                            {/* كنرسمو غير الـ currentItems ماشي كاع الـ dispatchers */}
+                            {currentItems.map((d) => (
                                 <tr key={d.userId}>
                                     <td>{d.firstName} {d.lastName}</td>
                                     <td>{d.email}</td>
@@ -170,10 +156,42 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
                             ))}
                             </tbody>
                         </table>
+
+                        {/* --- 3. تصميم الـ Pagination Buttons --- */}
+                        {totalPages > 1 && (
+                            <div className="pagination-container">
+                                <button
+                                    disabled={currentPage === 1}
+                                    onClick={() => paginate(currentPage - 1)}
+                                    className="page-nav-btn"
+                                >
+                                    <FaChevronLeft />
+                                </button>
+
+                                {Array.from({ length: totalPages }, (_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => paginate(i + 1)}
+                                        className={`page-number ${currentPage === i + 1 ? 'active' : ''}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+
+                                <button
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => paginate(currentPage + 1)}
+                                    className="page-nav-btn"
+                                >
+                                    <FaChevronRight />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </>
             ) : (
                 <div className="form-container">
+                    {/* ... (نفس كود الفورم ديالك بلا تغيير) ... */}
                     <div className="header-flex">
                         <h2 className="page-title">{isEditing ? "Edit Dispatcher" : "New Dispatcher"}</h2>
                         <button className="btn-back" onClick={cancelAction}><FaArrowLeft /> Back</button>
@@ -223,6 +241,7 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
                 </div>
             )}
 
+            {/* Modal Details (نفس كود المودال ديالك) */}
             {showDetails && selectedDispatcher && (
                 <div className="modal-overlay">
                     <div className="modal-content">

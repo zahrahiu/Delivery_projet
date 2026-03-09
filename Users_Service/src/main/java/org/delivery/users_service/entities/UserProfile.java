@@ -19,6 +19,10 @@ public class UserProfile {
     private String zone;  // خاص تكون zone ماشي city
     private String address;
 
+    private String vehicleType;  // Moto, Voiture, etc.
+    private String matricule;
+    private String permisNumber;
+
     @Enumerated(EnumType.STRING)
     private RoleType role;
 }

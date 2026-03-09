@@ -13,7 +13,6 @@ public interface SecurityClient {
     @PostMapping("/create")
     Map<String, Object> createAccount(@RequestBody Map<String, Object> securityReq);
 
-    // هادي ضرورية باش ما يعطيش 404 أو 500
     @PutMapping("/{id}")
     Map<String, Object> updateAccount(@PathVariable("id") Integer id, @RequestBody Map<String, Object> securityReq);
 }
