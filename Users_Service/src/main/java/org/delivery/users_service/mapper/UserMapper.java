@@ -46,7 +46,7 @@ public class UserMapper {
         dto.setMatricule(entity.getMatricule());
         dto.setPermisNumber(entity.getPermisNumber());
         dto.setRole(entity.getRole());
-
+        dto.setProfileImageUrl(entity.getProfileImageUrl());
         return dto;
     }
 }

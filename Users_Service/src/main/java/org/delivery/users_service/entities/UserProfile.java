@@ -18,7 +18,8 @@ public class UserProfile {
     private String cni;
     private String zone;  // خاص تكون zone ماشي city
     private String address;
-
+    // في UserProfile.java
+    private String profileImageUrl;
     private String vehicleType;  // Moto, Voiture, etc.
     private String matricule;
     private String permisNumber;

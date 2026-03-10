@@ -18,6 +18,8 @@ public class UserResponseDTO {
         private RoleType role;
     private String vehicleType;
     private String matricule;
+    // في UserProfile.java
+    private String profileImageUrl;
     private String permisNumber;
         // Getters and Setters...
     }
