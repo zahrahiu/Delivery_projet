@@ -7,6 +7,8 @@ import DispatcherDashboard from "./components/Dispatchers/DispatcherDashboard"; 
 import ProtectedRoute from "./components/ProtectedRoute";
 import LivreurDashboard from "./components/Livreurs/LivreurDashboard";
 import ClientDashboard from "./components/Clients/ClientDashboard";
+import UserProfile from "./components/Profile/UserProfile";
+import EditProfile from "./components/Profile/EditProfile";
 
 function App() {
     return (
@@ -53,6 +55,10 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
+                // وسط الـ Routes
+                <Route path="/profile" element={<ProtectedRoute allowedRoles={["ADMIN", "DISPATCHER", "LIVREUR", "CLIENT"]}><UserProfile /></ProtectedRoute>} />
+                <Route path="/edit-profile" element={<EditProfile />} />
             </Routes>
         </BrowserRouter>
     );
