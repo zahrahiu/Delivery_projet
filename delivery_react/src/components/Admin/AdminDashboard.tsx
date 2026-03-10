@@ -3,10 +3,11 @@ import axios from "axios";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FaTruck, FaUsers, FaBox, FaMoneyBillWave } from "react-icons/fa";
 import './AdminDashboard.css';
-import Sidebar from "./Sidebar";
-import TopHeader from "./TopHeader";
+import Sidebar from "../common/Sidebar";
+import TopHeader from "../common/TopHeader";
 import DispatchersTab from "./DispatchersTab";
 import LivreursTab from "./LivreursTab";
+import ClientsTab from "./ClientsTab";
 
 
 const deliveryData = [
@@ -153,6 +154,8 @@ const AdminDashboard: React.FC = () => {
                             console.log("Nombre de livreurs mis à jour :", count);
                         }} />
                     )}
+                    {activeTab === "clients" && <ClientsTab onClientsUpdate={fetchCount} />}
+
                 </section>
             </main>
         </div>

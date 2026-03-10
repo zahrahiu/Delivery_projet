@@ -133,6 +133,8 @@
     margin-top: 20px;
 }
 
+
+
 .custom-table th {
     background: #f8fafc;
 
@@ -322,21 +324,55 @@ form input {
     cursor: pointer;
 }
 
+/* الحاوية اللي كتجمع العنوان والزر */
 .header-flex {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    justify-content: space-between; /* كيعطي مساحة بين العنوان والزر */
+    align-items: center;            /* كيخليهم مقادين في الوسط أفقياً */
+    margin-bottom: 25px;            /* مساحة تحت الـ header باش ما يلصقش في الجدول */
+    padding: 0 10px;
+    position: relative;/* شوية ديال التنفس من الجناب */
 }
 
+/* التنسيق ديال العنوان (h2) */
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+
+    /* هادو هما اللي كيخليوه يجي في الوسط */
+    position: absolute;
+    left: 27%;
+    transform: translateX(-50%);
+}
+
+/* التنسيق ديال زر الإضافة (Add button) */
 .btn-add {
-    background: #3b4e61;
-    color: white;
-    border: none;
-    margin-right: 41px;
+    margin-left: auto; /* هادي هي اللي كتدفع الزر لأقصى اليمين */
+    background-color: #203339;
+    color: #ffffff;
     padding: 10px 20px;
     border-radius: 8px;
+    border: none;
     cursor: pointer;
+    display: flex;
+    margin-right: 29px;
+    align-items: center;
+    gap: 8px;
+}
+
+/* تأثير عند وضع الفأرة فوق الزر */
+.btn-add:hover {
+    background-color: #112024;      /* لون أغمق قليلاً */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);    /* كيطلع الزر شوية للفوق */
+}
+
+/* في حال كان الزر معطل (disabled) */
+.btn-add:disabled {
+    background-color: #cbd5e1;
+    cursor: not-allowed;
 }
 
 .btn-edit { color: #452020; background: none; border: none; cursor: pointer; margin-right: 10px; font-size: 1.1rem; }
