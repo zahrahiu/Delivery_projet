@@ -18,6 +18,7 @@ public class UserRequestDTO {
     private String vehicleType;
     private String matricule;
     private String permisNumber;
+
     // في UserProfile.java
     private String profileImageUrl;
 }

@@ -36,12 +36,11 @@ public class UserProfileController {
     @PutMapping(value = "/{id}", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<UserResponseDTO> update(
             @PathVariable Integer id,
-            @RequestPart("data") String data, // هنا كنستقبلو الـ JSON كـ String
-            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+            @ModelAttribute UserRequestDTO request, // الربط كيكون أوتوماتيكي مع الحقول
+            @RequestParam(value = "file", required = false) MultipartFile file) {
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        UserRequestDTO request = objectMapper.readValue(data, UserRequestDTO.class);
-
+        // Spring غايشد كاع الحقول اللي صيفطتي في FormData ويحطهم في UserRequestDTO بوحدو
+        System.out.println("DEBUG: Updating profile for ID: " + id);
         return ResponseEntity.ok(profileService.updateUserProfile(id, request, file));
     }
 
@@ -60,4 +59,7 @@ public class UserProfileController {
         profileService.deleteProfile(id);
         return ResponseEntity.noContent().build();
     }
+
+
+
 }

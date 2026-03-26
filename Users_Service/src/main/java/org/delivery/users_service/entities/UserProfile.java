@@ -24,6 +24,8 @@ public class UserProfile {
     private String matricule;
     private String permisNumber;
 
+
+
     @Enumerated(EnumType.STRING)
     private RoleType role;
 }

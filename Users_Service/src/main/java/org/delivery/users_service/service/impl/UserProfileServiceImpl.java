@@ -5,6 +5,7 @@ import org.delivery.users_service.client.SecurityClient;
 import org.delivery.users_service.DTO.UserRequestDTO;
 import org.delivery.users_service.DTO.UserResponseDTO;
 import org.delivery.users_service.entities.UserProfile;
+import org.delivery.users_service.events.UserEventProducer;
 import org.delivery.users_service.mapper.UserMapper;
 import org.delivery.users_service.repository.UserRepository;
 import org.delivery.users_service.service.UserProfileService;
@@ -26,19 +27,21 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final UserMapper mapper;
     private final PasswordEncoder passwordEncoder;
     private final String UPLOAD_DIR;
+    private final UserEventProducer userEventProducer; // 1. زيدي هاد السطر
 
     public UserProfileServiceImpl(
             UserRepository repository,
             SecurityClient securityClient,
             UserMapper mapper,
             PasswordEncoder passwordEncoder,
-            @Value("${upload.directory:Users_Service/uploads/}") String uploadDir  // من application.properties
+            @Value("${upload.directory:Users_Service/uploads/}") String uploadDir, UserEventProducer userEventProducer  // من application.properties
     ) {
         this.repository = repository;
         this.securityClient = securityClient;
         this.mapper = mapper;
         this.passwordEncoder = passwordEncoder;
         this.UPLOAD_DIR = uploadDir;
+        this.userEventProducer = userEventProducer;
 
         try {
             Path uploadPath = Paths.get(UPLOAD_DIR);
@@ -75,69 +78,78 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
 
         UserProfile savedProfile = repository.save(profile);
+
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("email", request.getEmail());
+        eventData.put("password", request.getPassword()); // الباسورد اللي غيوصل للـ Client
+        eventData.put("firstName", request.getFirstName());
+
+        userEventProducer.sendUserCreatedEvent(eventData);
         return mapper.toDTO(savedProfile);
     }
 
     @Override
     @Transactional
     public UserResponseDTO updateUserProfile(Integer id, UserRequestDTO request, MultipartFile file) {
+        // 1. البحث عن البروفايل الأصلي
         UserProfile existingProfile = repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("User non trouvé ID: " + id));
 
+        // 2. تعامل مع الصورة (هاد الجزء عندك صحيح، نقيوه شوية)
         if (file != null && !file.isEmpty()) {
-            try {
-                Path uploadPath = Paths.get(UPLOAD_DIR);
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
-
-                if (existingProfile.getProfileImageUrl() != null) {
-                    Path oldFile = uploadPath.resolve(existingProfile.getProfileImageUrl());
-                    Files.deleteIfExists(oldFile);
-                }
-
-                String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                existingProfile.setProfileImageUrl(fileName);
-                System.out.println("✅ Image saved: " + filePath.toAbsolutePath());
-            } catch (IOException e) {
-                throw new RuntimeException("Error saving image: " + e.getMessage());
-            }
+            updateProfileImage(existingProfile, file);
         }
 
+        // 3. تحضير الداتا لـ Security Service
         Map<String, Object> securityReq = new HashMap<>();
-        securityReq.put("firstName", request.getFirstName());
-        securityReq.put("lastName", request.getLastName());
-        securityReq.put("email", request.getEmail());
+        // استعملي القيمة الجديدة من الـ request إيلا كانت موجودة، وإيلا لا خلي القديمة
+        securityReq.put("firstName", request.getFirstName() != null ? request.getFirstName() : existingProfile.getFirstName());
+        securityReq.put("lastName", request.getLastName() != null ? request.getLastName() : existingProfile.getLastName());
+        securityReq.put("email", request.getEmail() != null ? request.getEmail() : existingProfile.getEmail());
+
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             securityReq.put("password", request.getPassword());
         }
 
+        // 4. السنك مع Security Service
         try {
+            // تأكدي أن existingProfile.getUserId() هو الـ ID الصحيح فـ جهة السيكوريتي
             securityClient.updateAccount(existingProfile.getUserId(), securityReq);
         } catch (Exception e) {
-            throw new RuntimeException("Erreur de synchronisation: " + e.getMessage());
+            throw new RuntimeException("Erreur de synchronisation avec Security Service: " + e.getMessage());
         }
 
-        existingProfile.setFirstName(request.getFirstName());
-        existingProfile.setLastName(request.getLastName());
-        existingProfile.setEmail(request.getEmail());
-        existingProfile.setPhone(request.getPhone());
-        existingProfile.setCni(request.getCni());
-        existingProfile.setZone(request.getZone());
-        existingProfile.setAddress(request.getAddress());
-        existingProfile.setVehicleType(request.getVehicleType());
-        existingProfile.setMatricule(request.getMatricule());
-        existingProfile.setPermisNumber(request.getPermisNumber());
-        existingProfile.setRole(request.getRole());
+        // 5. تحديث الحقول فـ Users_Service (فقط الحقول اللي ماشي null فـ request)
+        if (request.getFirstName() != null) existingProfile.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) existingProfile.setLastName(request.getLastName());
+        if (request.getEmail() != null) existingProfile.setEmail(request.getEmail());
+        if (request.getPhone() != null) existingProfile.setPhone(request.getPhone());
+        if (request.getZone() != null) existingProfile.setZone(request.getZone());
+        if (request.getAddress() != null) existingProfile.setAddress(request.getAddress());
+        if (request.getVehicleType() != null) existingProfile.setVehicleType(request.getVehicleType());
+        if (request.getMatricule() != null) existingProfile.setMatricule(request.getMatricule());
+        if (request.getPermisNumber() != null) existingProfile.setPermisNumber(request.getPermisNumber());
 
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             existingProfile.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
         return mapper.toDTO(repository.save(existingProfile));
+    }
+
+    // ميتود مساعدة باش يبقا الكود نقي
+    private void updateProfileImage(UserProfile profile, MultipartFile file) {
+        try {
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (profile.getProfileImageUrl() != null) {
+                Files.deleteIfExists(uploadPath.resolve(profile.getProfileImageUrl()));
+            }
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            Files.copy(file.getInputStream(), uploadPath.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+            profile.setProfileImageUrl(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException("Error saving image: " + e.getMessage());
+        }
     }
 
     @Override
@@ -167,4 +179,6 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         repository.deleteById(id);
     }
+
+
 }

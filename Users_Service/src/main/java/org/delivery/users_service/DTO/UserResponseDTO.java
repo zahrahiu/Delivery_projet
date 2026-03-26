@@ -17,6 +17,7 @@ public class UserResponseDTO {
         private String address;
         private RoleType role;
     private String vehicleType;
+
     private String matricule;
     // في UserProfile.java
     private String profileImageUrl;
