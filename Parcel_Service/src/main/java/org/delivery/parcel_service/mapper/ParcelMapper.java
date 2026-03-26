@@ -14,28 +14,33 @@ public class ParcelMapper {
 
     public Parcel toEntity(ParcelRequestDTO dto) {
         return Parcel.builder()
-                // 1. هنا كناخدو المعلومات اللي جاية من الـ Request
-                .senderId(dto.getSenderId())
                 .weight(dto.getWeight())
                 .deliveryAddress(dto.getDeliveryAddress())
                 .zoneId(dto.getZoneId())
-
-                // 2. هاد الحقول كيبقاو null فالبداية حيت السيرفيس هو اللي كيعمرهم من بعد
+                .senderId(dto.getSenderId())
+                // زيدي هاد السطور ضروري:
+                .senderName(dto.getSenderName())
+                .senderPhone(dto.getSenderPhone())
+                .senderEmail(dto.getClientEmail()) // كنقلبو clientEmail لـ senderEmail
                 .status(ParcelStatus.PENDING)
                 .build();
     }
 
-    // داخل ParcelMapper.java
     public ParcelResponseDTO toResponse(Parcel parcel) {
         ParcelResponseDTO dto = new ParcelResponseDTO();
         dto.setId(parcel.getId());
         dto.setTrackingNumber(parcel.getTrackingNumber());
         dto.setWeight(parcel.getWeight());
         dto.setDeliveryAddress(parcel.getDeliveryAddress());
-        // الـ null handling هنا كيخلي الـ Frontend ما يوقعش ليه مشكل
+
+        // تعديل هنا باش ياخد الداتا الحقيقية من الـ Entity
         dto.setSenderName(parcel.getSenderName() != null ? parcel.getSenderName() : "Unknown");
         dto.setSenderPhone(parcel.getSenderPhone() != null ? parcel.getSenderPhone() : "N/A");
-        dto.setStatus(parcel.getStatus());
+
+        // زيدي هاد السطر باش Node.js يلقى الإيميل:
+        dto.setClientEmail(parcel.getSenderEmail());
+
+        dto.setStatus(parcel.getStatus() != null ? parcel.getStatus().name() : "PENDING");
         return dto;
     }
 }

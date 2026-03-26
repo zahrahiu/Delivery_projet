@@ -3,13 +3,14 @@ package org.delivery.parcel_service.dto;
 import lombok.Data;
 import org.delivery.parcel_service.domain.entity.ParcelStatus;
 
-@Data// هاد الـ DTO كنستعملوه ملي بغينا نرجعو معلومات الطرد للـ User
+@Data
 public class ParcelResponseDTO {
-    Long id;
-    String trackingNumber;
-    Double weight;
-    String deliveryAddress;
-    String senderName;
-    String senderPhone;
-    ParcelStatus status;
+    private Long id;
+    private String trackingNumber;
+    private Double weight;
+    private String deliveryAddress;
+    private String senderName;
+    private String senderPhone;
+    private String clientEmail; // ضروري تزيديه هنا باش يبان فـ Kafka
+    private String status;
 }

@@ -25,7 +25,8 @@ public class Parcel {
     private Integer senderId;
     private String senderName;
     private String senderPhone;
-
+    // داخل Parcel.java
+    private String senderEmail; // أو clientEmail حسب شنو سميتي فـ DTO
     @Enumerated(EnumType.STRING)
     private ParcelStatus status;
 
