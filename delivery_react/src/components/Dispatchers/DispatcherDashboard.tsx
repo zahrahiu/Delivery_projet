@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
-
+import ColisManagement from "./ ColisManagement"; // زيدي هاد الـ Import
 const DispatcherDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,6 +45,7 @@ const DispatcherDashboard: React.FC = () => {
                 />
                 <section className="content-body">
                     {activeTab === "dashboard" && <h1>Bienvenue {userData?.firstName || "Dispatcher"}</h1>}
+                    {activeTab === "colis" && <ColisManagement />}
                 </section>
             </main>
         </div>

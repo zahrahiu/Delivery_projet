@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FaTruck, FaUsers, FaBox, FaMoneyBillWave } from "react-icons/fa";
+import { FaTruck, FaUsers, FaBox } from "react-icons/fa";
 import './AdminDashboard.css';
 import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
 import DispatchersTab from "./DispatchersTab";
 import LivreursTab from "./LivreursTab";
 import ClientsTab from "./ClientsTab";
-
 
 const deliveryData = [
     { month: 'Jan', delivered: 400, returned: 50 },
@@ -26,38 +25,53 @@ const statusData = [
 
 const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
+
+    // States لتمثيل الأعداد الحقيقية
+    const [livreursCount, setLivreursCount] = useState(0);
+    const [clientsCount, setClientsCount] = useState(0);
     const [dispatchersCount, setDispatchersCount] = useState(0);
 
-    // --- هادو هما لي كانو ناقصينك باش يخدم الـ Popup والـ Theme ---
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
 
-    const fetchCount = async () => {
+    const API_URL = "http://localhost:8081/api/profiles";
+
+    const fetchCounts = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await axios.get("http://localhost:8081/api/profiles", {
+            const res = await axios.get(API_URL, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setDispatchersCount(res.data.length);
-        } catch (error) { console.error("Error fetching count:", error); }
+
+            const allUsers = res.data;
+
+            // حساب الأعداد بناءً على الـ Role
+            const livreurs = allUsers.filter((u: any) => u.role === "LIVREUR").length;
+            const clients = allUsers.filter((u: any) => u.role === "CLIENT").length;
+            const dispatchers = allUsers.filter((u: any) => u.role === "DISPATCHER").length;
+
+            setLivreursCount(livreurs);
+            setClientsCount(clients);
+            setDispatchersCount(dispatchers);
+
+        } catch (error) {
+            console.error("Error fetching counts:", error);
+        }
     };
 
     useEffect(() => {
-        fetchCount();
+        fetchCounts();
     }, []);
 
-    // دالة لتبديل الـ Theme
     const toggleTheme = () => {
         setDarkMode(!darkMode);
     };
 
     return (
-        // زدت class "dark-mode" هنا باش يتحكم ف الألوان إلا بغيتي تطوريها
         <div className={`admin-container ${darkMode ? 'dark-theme' : ''}`} onClick={() => setIsMenuOpen(false)}>
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
             <main className="main-content">
-                {/* دابا صيفطنا كاع الـ Props لي كيحتاجهم الـ Header */}
                 <TopHeader
                     activeTab={activeTab}
                     isMenuOpen={isMenuOpen}
@@ -69,24 +83,28 @@ const AdminDashboard: React.FC = () => {
                 <section className="content-body">
                     {activeTab === "dashboard" && (
                         <div className="dashboard-wrapper">
-
-                            {/* Stats Cards */}
+                            {/* Stats Cards (Dynamic Numbers) */}
                             <div className="stats-grid-top">
                                 <div className="stat-item purple-light">
                                     <div className="icon-circle"><FaBox /></div>
-                                    <div className="texts"><span>Total Colis</span> <h2>2,840</h2></div>
+                                    <div className="texts">
+                                        <span>Total Colis</span>
+                                        <h2>2,840</h2> {/* هادي غتحتاجي API ديال الـ Orders مستقبلا */}
+                                    </div>
                                 </div>
                                 <div className="stat-item blue-light">
                                     <div className="icon-circle"><FaTruck /></div>
-                                    <div className="texts"><span>Livreurs Actifs</span> <h2>45</h2></div>
+                                    <div className="texts">
+                                        <span>Livreurs Actifs</span>
+                                        <h2>{livreursCount}</h2> {/* عدد حقيقي */}
+                                    </div>
                                 </div>
                                 <div className="stat-item green-light">
                                     <div className="icon-circle"><FaUsers /></div>
-                                    <div className="texts"><span>Clients</span> <h2>1,205</h2></div>
-                                </div>
-                                <div className="stat-item orange-light">
-                                    <div className="icon-circle"><FaMoneyBillWave /></div>
-                                    <div className="texts"><span>COD Collected</span> <h2>45,000 DH</h2></div>
+                                    <div className="texts">
+                                        <span>Clients</span>
+                                        <h2>{clientsCount}</h2> {/* عدد حقيقي */}
+                                    </div>
                                 </div>
                             </div>
 
@@ -125,36 +143,67 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Recent Activity Section - كمالة الـ Dashboard */}
                             <div className="recent-activity-section">
-                                <h3>Dernières Expéditions 🚚</h3>
-                                <table className="activity-table">
-                                    <thead>
-                                    <tr>
-                                        <th>ID Colis</th>
-                                        <th>Client</th>
-                                        <th>Livreur</th>
-                                        <th>Ville</th>
-                                        <th>Status</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr><td>#LM-9021</td><td>Ahmed Ali</td><td>Yassine</td><td>Casablanca</td><td><span className="badge green">Livré</span></td></tr>
-                                    <tr><td>#LM-9022</td><td>Sara Noor</td><td>Karim</td><td>Rabat</td><td><span className="badge yellow">En cours</span></td></tr>
-                                    <tr><td>#LM-9023</td><td>Mehdi H.</td><td>Omar</td><td>Tangier</td><td><span className="badge red">Retourné</span></td></tr>
-                                    </tbody>
-                                </table>
+                                <div className="header-flex-table">
+                                    <h3>Dernières Expéditions 🚚</h3>
+                                    <button className="btn-view-all" onClick={() => setActiveTab("colis")}>Voir tout</button>
+                                </div>
+                                <div className="table-container">
+                                    <table className="activity-table">
+                                        <thead>
+                                        <tr>
+                                            <th>ID Colis</th>
+                                            <th>Client</th>
+                                            <th>Livreur</th>
+                                            <th>Ville</th>
+                                            <th>Status</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {/* هادو تقدري ترجعيهم ديناميكيين من بعد من الـ API ديال Orders */}
+                                        <tr>
+                                            <td>#LM-9021</td>
+                                            <td>Ahmed Ali</td>
+                                            <td>Yassine</td>
+                                            <td>Casablanca</td>
+                                            <td><span className="badge green">Livré</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#LM-9022</td>
+                                            <td>Sara Noor</td>
+                                            <td>Karim</td>
+                                            <td>Rabat</td>
+                                            <td><span className="badge yellow">En cours</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#LM-9023</td>
+                                            <td>Mehdi H.</td>
+                                            <td>Omar</td>
+                                            <td>Tangier</td>
+                                            <td><span className="badge red">Retourné</span></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     )}
 
-                    {activeTab === "dispatchers" && <DispatchersTab onDispatchersUpdate={fetchCount} />}
-                    {activeTab === "livreurs" && (
-                        <LivreursTab onLivreursUpdate={(count) => {
-                            // دابا هاد الكود غيخدم حيت LiversTab كيعرف شنو هي onLivreursUpdate
-                            console.log("Nombre de livreurs mis à jour :", count);
-                        }} />
+                    {/* التبويب الخاص بالـ Dispatchers */}
+                    {activeTab === "dispatchers" && (
+                        <DispatchersTab onDispatchersUpdate={fetchCounts} />
                     )}
-                    {activeTab === "clients" && <ClientsTab onClientsUpdate={fetchCount} />}
+
+                    {/* التبويب الخاص بالـ Livreurs */}
+                    {activeTab === "livreurs" && (
+                        <LivreursTab onLivreursUpdate={fetchCounts} />
+                    )}
+
+                    {/* التبويب الخاص بالـ Clients */}
+                    {activeTab === "clients" && (
+                        <ClientsTab onClientsUpdate={fetchCounts} />
+                    )}
 
                 </section>
             </main>

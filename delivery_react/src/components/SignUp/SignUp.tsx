@@ -27,7 +27,7 @@ const Signup: React.FC = () => {
             {/* Signup Card */}
             <div className="signup-card">
                 <div className="signup-left">
-                    <h2>Join QribLik</h2>
+                    <h2>Rejoignez QribLik</h2>
                     <p>Créez votre compte pour envoyer et suivre vos colis rapidement et en toute sécurité.</p>
 
                     <form className="signup-form">
@@ -60,20 +60,20 @@ const Signup: React.FC = () => {
                                     className="show-btn"
                                     onClick={() => setShowPassword(!showPassword)}
                                 >
-                                    {showPassword ? "HIDE" : "SHOW"}
+                                    {showPassword ? "CACHER" : "AFFICHER"}
                                 </button>
                             </div>
                             <div className="password-group">
                                 <input
                                     type={showConfirm ? "text" : "password"}
-                                    placeholder="Confirmer mot de passe"
+                                    placeholder="Confirmer"
                                 />
                                 <button
                                     type="button"
                                     className="show-btn"
                                     onClick={() => setShowConfirm(!showConfirm)}
                                 >
-                                    {showConfirm ? "HIDE" : "SHOW"}
+                                    {showConfirm ? "CACHER" : "AFFICHER"}
                                 </button>
                             </div>
                         </div>
@@ -84,15 +84,13 @@ const Signup: React.FC = () => {
 
                 {/* Right Side - Image or info */}
                 <div className="signup-right">
-                    <h2>Why QribLik?</h2>
+                    <h2>Pourquoi QribLik ?</h2>
                     <p>
                         Profitez d’une livraison rapide, sécurisée et sans stress. Suivez vos colis en temps réel et simplifiez votre quotidien.
                     </p>
 
-                    {/* Sous le bouton S’inscrire */}
-                    {/* Sous le bouton S’inscrire */}
                     <div className="login-redirect">
-                        <p>Pas encore de compte ?</p>
+                        <p>Déjà un compte ?</p>
                         <button className="login-redirect-btn" onClick={() => navigate("/login")}>
                             Connectez-vous !
                         </button>

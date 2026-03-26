@@ -25,19 +25,19 @@ const Login: React.FC = () => {
 
             // decode JWT باش نعرفو role
             const payload = JSON.parse(atob(accessToken.split(".")[1]));
-            const roles = payload.roles; // ولا payload.role, حسب backend
+            const roles = payload.roles;
 
             if (roles.includes("ADMIN")) {
-                navigate("/admin"); // Admin dashboard
+                navigate("/admin");
             } else if (roles.includes("DISPATCHER")) {
-                navigate("/dispatcher"); // Dispatcher dashboard
+                navigate("/dispatcher");
             } else if (roles.includes("LIVREUR")) {
-                navigate("/livreur"); // Livreur dashboard
+                navigate("/livreur");
             } else {
-                navigate("/client"); // Client dashboard
+                navigate("/client");
             }
         } catch (err: any) {
-            alert("Login failed! Check your email or password.");
+            alert("Échec de la connexion ! Vérifiez votre email ou mot de passe.");
             console.error(err);
         }
     };
@@ -60,14 +60,14 @@ const Login: React.FC = () => {
             <div className="login-card">
                 {/* Left Side - Login */}
                 <div className="login-left">
-                    <h2>Welcome Back</h2>
+                    <h2>Bon retour !</h2>
                     <p>Connectez-vous pour suivre vos livraisons et gérer vos commandes facilement.</p>
 
                     <div className="input-group">
                         <FaUser className="icon" />
                         <input
                             type="text"
-                            placeholder="User Name"
+                            placeholder="Votre Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                         />
@@ -77,7 +77,7 @@ const Login: React.FC = () => {
                         <FaLock className="icon" />
                         <input
                             type={showPassword ? "text" : "password"}
-                            placeholder="Password"
+                            placeholder="Mot de passe"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
@@ -86,24 +86,24 @@ const Login: React.FC = () => {
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                         >
-                            {showPassword ? "HIDE" : "SHOW"}
+                            {showPassword ? "CACHER" : "AFFICHER"}
                         </button>
                     </div>
 
-                    <button className="login-btn" onClick={handleLogin}>Login</button>
+                    <button className="login-btn" onClick={handleLogin}>Se connecter</button>
                     <a href="#" className="forgot-link">
-                        Forgot Password?
+                        Mot de passe oublié ?
                     </a>
                 </div>
 
                 {/* Right Side - Signup */}
                 <div className="login-right">
-                    <h2>New Here?</h2>
+                    <h2>Nouveau ici ?</h2>
                     <p>
                         Créez un compte dès maintenant pour envoyer et suivre vos colis facilement.
                         Profitez d’une livraison rapide, sécurisée et sans stress.
                     </p>
-                    <button onClick={() => navigate("/Signup")} className="signup-btn">Sign Up</button>
+                    <button onClick={() => navigate("/Signup")} className="signup-btn">S'inscrire</button>
                 </div>
             </div>
 

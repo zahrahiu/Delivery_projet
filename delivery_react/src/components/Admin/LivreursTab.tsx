@@ -72,16 +72,47 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
         e.preventDefault();
         setIsLoading(true);
         try {
+            const token = localStorage.getItem("token");
+
             if (isEditing) {
-                await axios.put(`${API_URL}/${formData.userId}`, formData, { headers: getAuthHeader() });
+                // --- حالة التعديل (Update) : ضروري صيفطي FormData ---
+                const dataToSend = new FormData();
+
+                // تحويل كاع الحقول لـ FormData باش يقبلها الـ Backend
+                Object.entries(formData).forEach(([key, value]) => {
+                    if (value !== "" && value !== null) {
+                        dataToSend.append(key, value as string);
+                    }
+                });
+
+                await axios.put(`${API_URL}/${formData.userId}`, dataToSend, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data' // هادي هي السر
+                    }
+                });
+                alert("Livreur modifié avec succès ✅");
             } else {
-                await axios.post(API_URL, formData, { headers: getAuthHeader() });
+                // --- حالة إضافة جديد (Create) : صيفطي JSON عادي ---
+                const { confirmPassword, userId, ...payload } = formData;
+                await axios.post(API_URL, payload, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                alert("Livreur ajouté avec succès ✅");
             }
+
             setIsFormOpen(false);
             setFormData(initialForm);
             fetchLivreurs();
-        } catch (error) { alert("Erreur lors de l'enregistrement"); }
-        finally { setIsLoading(false); }
+        } catch (error: any) {
+            console.error("Error details:", error.response?.data);
+            alert("Erreur lors de l'enregistrement: " + (error.response?.data?.message || "Vérifiez la console"));
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleDelete = async (id: number) => {

@@ -15,6 +15,7 @@ interface Dispatcher {
     address?: string;
     cni?: string;
     active?: boolean;
+    role: string;
 }
 
 interface Props {
@@ -29,15 +30,23 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
     const [selectedDispatcher, setSelectedDispatcher] = useState<Dispatcher | null>(null);
     const [showDetails, setShowDetails] = useState(false);
 
-    // --- 1. States ديال الـ Pagination ---
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
     const initialForm = {
-        userId: "", firstName: "", lastName: "", email: "",
-        password: "", confirmPassword: "", phone: "",
-        cni: "", zone: "", address: "", role: "DISPATCHER"
+        userId: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        phone: "",
+        cni: "",
+        zone: "",
+        address: "",
+        role: "DISPATCHER"
     };
+
     const [formData, setFormData] = useState(initialForm);
 
     const API_URL = "http://localhost:8081/api/profiles";
@@ -46,10 +55,7 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
     const fetchDispatchers = async () => {
         try {
             const response = await axios.get(API_URL, { headers: getAuthHeader() });
-
-            // --- التعديل هنا: كنصفيو فقط الـ DISPATCHER ---
             const onlyDispatchers = response.data.filter((user: any) => user.role === "DISPATCHER");
-
             setDispatchers(onlyDispatchers);
             if (onDispatchersUpdate) onDispatchersUpdate(onlyDispatchers.length);
         } catch (error) {
@@ -59,13 +65,10 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
 
     useEffect(() => { fetchDispatchers(); }, []);
 
-    // --- 2. Logic ديال حساب الصفحات ---
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = dispatchers.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(dispatchers.length / itemsPerPage);
-
-    const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -82,6 +85,7 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
             cni: d.cni || "",
             zone: d.zone || "",
             address: d.address || "",
+            role: "DISPATCHER"
         });
         setIsEditing(true);
         setIsFormOpen(true);
@@ -97,16 +101,42 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
         e.preventDefault();
         setIsLoading(true);
         try {
+            const token = localStorage.getItem("token");
+
             if (isEditing) {
-                await axios.put(`${API_URL}/${formData.userId}`, formData, { headers: getAuthHeader() });
+                const dataToSend = new FormData();
+
+                Object.entries(formData).forEach(([key, value]) => {
+                    if (value !== "" && value !== null) {
+                        dataToSend.append(key, value as string);
+                    }
+                });
+
+                await axios.put(`${API_URL}/${formData.userId}`, dataToSend, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                alert("Modifié ✅");
             } else {
-                await axios.post(API_URL, formData, { headers: getAuthHeader() });
+                const { confirmPassword, userId, ...payload } = formData;
+                await axios.post(API_URL, payload, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                alert("Créé ✅");
             }
             cancelAction();
             fetchDispatchers();
         } catch (error: any) {
-            alert("Erreur: " + (error.response?.data?.message || "Error"));
-        } finally { setIsLoading(false); }
+            console.error("Error:", error.response?.data);
+            alert("Erreur: " + (error.response?.data?.message || "Check Console"));
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleDelete = async (id: number) => {
@@ -114,7 +144,7 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
             try {
                 await axios.delete(`${API_URL}/${id}`, { headers: getAuthHeader() });
                 fetchDispatchers();
-            } catch (error) { alert("Erreur."); }
+            } catch (error) { alert("Erreur lors de la suppression."); }
         }
     };
 
@@ -123,117 +153,95 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
             {!isFormOpen ? (
                 <>
                     <div className="header-flex">
-                        <h2 className="section-title">Manage Dispatchers </h2>
-                        <button className="btn-add" onClick={() => { setIsEditing(false); setIsFormOpen(true); }}>
-                            + Add New
+                        <h2 className="section-title">Gestion des Dispatchers ({dispatchers.length})</h2>
+                        <button className="btn-add" onClick={() => { setIsEditing(false); setFormData(initialForm); setIsFormOpen(true); }}>
+                            + Nouveau Dispatcher
                         </button>
                     </div>
                     <div className="table-container">
                         <table className="custom-table">
                             <thead>
                             <tr>
-                                <th>Full Name</th>
+                                <th>Nom Complet</th>
                                 <th>Email</th>
-                                <th>Phone</th>
+                                <th>Téléphone</th>
                                 <th>Zone</th>
                                 <th>Actions</th>
                             </tr>
                             </thead>
                             <tbody>
-                            {/* كنرسمو غير الـ currentItems ماشي كاع الـ dispatchers */}
                             {currentItems.map((d) => (
                                 <tr key={d.userId}>
                                     <td>{d.firstName} {d.lastName}</td>
                                     <td>{d.email}</td>
                                     <td>{d.phone}</td>
-                                    <td>{d.zone}</td>
+                                    <td><span className="zone-badge">{d.zone}</span></td>
                                     <td className="action-buttons">
-                                        <FaEye className="icon-view" onClick={() => { setSelectedDispatcher(d); setShowDetails(true); }} />
-                                        <FaEdit className="icon-edit" onClick={() => handleEditClick(d)} />
-                                        <FaTrash className="icon-delete" onClick={() => handleDelete(d.userId)} />
+                                        <FaEye className="icon-view" title="Voir" onClick={() => { setSelectedDispatcher(d); setShowDetails(true); }} />
+                                        <FaEdit className="icon-edit" title="Modifier" onClick={() => handleEditClick(d)} />
+                                        <FaTrash className="icon-delete" title="Supprimer" onClick={() => handleDelete(d.userId)} />
                                     </td>
                                 </tr>
                             ))}
                             </tbody>
                         </table>
 
-                        {/* --- 3. تصميم الـ Pagination Buttons --- */}
                         {totalPages > 1 && (
                             <div className="pagination-container">
-                                <button
-                                    disabled={currentPage === 1}
-                                    onClick={() => paginate(currentPage - 1)}
-                                    className="page-nav-btn"
-                                >
-                                    <FaChevronLeft />
-                                </button>
-
+                                <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)} className="page-nav-btn"><FaChevronLeft /></button>
                                 {Array.from({ length: totalPages }, (_, i) => (
-                                    <button
-                                        key={i + 1}
-                                        onClick={() => paginate(i + 1)}
-                                        className={`page-number ${currentPage === i + 1 ? 'active' : ''}`}
-                                    >
-                                        {i + 1}
-                                    </button>
+                                    <button key={i + 1} onClick={() => setCurrentPage(i + 1)} className={`page-number ${currentPage === i + 1 ? 'active' : ''}`}>{i + 1}</button>
                                 ))}
-
-                                <button
-                                    disabled={currentPage === totalPages}
-                                    onClick={() => paginate(currentPage + 1)}
-                                    className="page-nav-btn"
-                                >
-                                    <FaChevronRight />
-                                </button>
+                                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)} className="page-nav-btn"><FaChevronRight /></button>
                             </div>
                         )}
                     </div>
                 </>
             ) : (
                 <div className="form-container">
-                    {/* ... (نفس كود الفورم ديالك بلا تغيير) ... */}
                     <div className="header-flex">
-                        <h2 className="page-title">{isEditing ? "Edit Dispatcher" : "New Dispatcher"}</h2>
-                        <button className="btn-back" onClick={cancelAction}><FaArrowLeft /> Back</button>
+                        <h2 className="page-title">{isEditing ? "Modifier Dispatcher" : "Nouveau Dispatcher"}</h2>
+                        <button className="btn-back" onClick={cancelAction}><FaArrowLeft /> Retour</button>
                     </div>
                     <div className="form-card-clean">
                         <form onSubmit={handleSave}>
                             <div className="form-row-grid">
-                                <div className="input-block"><label>First Name</label><input type="text" name="firstName" required value={formData.firstName} onChange={handleInputChange} /></div>
-                                <div className="input-block"><label>Last Name</label><input type="text" name="lastName" required value={formData.lastName} onChange={handleInputChange} /></div>
+                                <div className="input-block"><label>Prénom</label><input type="text" name="firstName" required value={formData.firstName} onChange={handleInputChange} /></div>
+                                <div className="input-block"><label>Nom</label><input type="text" name="lastName" required value={formData.lastName} onChange={handleInputChange} /></div>
                             </div>
                             <div className="form-row-grid">
                                 <div className="input-block"><label>CNI</label><input type="text" name="cni" value={formData.cni} onChange={handleInputChange} /></div>
-                                <div className="input-block"><label>Phone Number</label><input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange} /></div>
+                                <div className="input-block"><label>Téléphone</label><input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange} /></div>
                             </div>
                             <div className="form-row-grid">
                                 <div className="input-block">
-                                    <label>Zone / City</label>
+                                    <label>Zone / Ville</label>
                                     <select name="zone" required value={formData.zone} onChange={handleInputChange} className="clean-select">
-                                        <option value="">Select Zone</option>
+                                        <option value="">Sélectionner...</option>
                                         <option value="Maarif">Maarif</option>
                                         <option value="Sidi Bernoussi">Sidi Bernoussi</option>
                                         <option value="Casablanca">Casablanca</option>
+                                        <option value="Rabat">Rabat</option>
                                     </select>
                                 </div>
-                                <div className="input-block"><label>Address</label><input type="text" name="address" value={formData.address} onChange={handleInputChange} /></div>
+                                <div className="input-block"><label>Adresse</label><input type="text" name="address" value={formData.address} onChange={handleInputChange} /></div>
                             </div>
 
                             <div className="input-block">
-                                <label>Email Address</label>
+                                <label>Email</label>
                                 <input type="email" name="email" required value={formData.email} onChange={handleInputChange} disabled={isEditing} />
                             </div>
 
                             {!isEditing && (
                                 <div className="form-row-grid">
-                                    <div className="input-block"><label>Password</label><input type="password" name="password" required value={formData.password} onChange={handleInputChange} /></div>
-                                    <div className="input-block"><label>Confirm</label><input type="password" name="confirmPassword" required onChange={handleInputChange} /></div>
+                                    <div className="input-block"><label>Mot de passe</label><input type="password" name="password" required value={formData.password} onChange={handleInputChange} /></div>
+                                    <div className="input-block"><label>Confirmation</label><input type="password" name="confirmPassword" required onChange={handleInputChange} /></div>
                                 </div>
                             )}
 
                             <div className="form-footer">
                                 <button type="submit" className="save-changes-btn" disabled={isLoading}>
-                                    {isLoading ? <FaSpinner className="spinner" /> : (isEditing ? "Update Profile" : "Create Account")}
+                                    {isLoading ? <FaSpinner className="spinner" /> : (isEditing ? "Enregistrer les modifications" : "Créer le compte")}
                                 </button>
                             </div>
                         </form>
@@ -241,21 +249,20 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
                 </div>
             )}
 
-            {/* Modal Details (نفس كود المودال ديالك) */}
             {showDetails && selectedDispatcher && (
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h3>Dispatcher Details</h3>
+                            <h3>Détails du Dispatcher</h3>
                             <FaTimes onClick={() => setShowDetails(false)} style={{ cursor: 'pointer' }} />
                         </div>
                         <div className="modal-body">
-                            <p><strong>Full Name:</strong> {selectedDispatcher.firstName} {selectedDispatcher.lastName}</p>
+                            <p><strong>Nom complet:</strong> {selectedDispatcher.firstName} {selectedDispatcher.lastName}</p>
                             <p><strong>Email:</strong> {selectedDispatcher.email}</p>
-                            <p><strong>Phone:</strong> {selectedDispatcher.phone}</p>
+                            <p><strong>Téléphone:</strong> {selectedDispatcher.phone}</p>
                             <p><strong>CNI:</strong> {selectedDispatcher.cni || "N/A"}</p>
                             <p><strong>Zone:</strong> {selectedDispatcher.zone}</p>
-                            <p><strong>Address:</strong> {selectedDispatcher.address || "N/A"}</p>
+                            <p><strong>Adresse:</strong> {selectedDispatcher.address || "Non spécifiée"}</p>
                         </div>
                     </div>
                 </div>

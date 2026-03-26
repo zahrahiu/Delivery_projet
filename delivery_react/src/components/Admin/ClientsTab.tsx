@@ -58,17 +58,40 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+
         try {
             if (isEditing) {
-                await axios.put(`${API_URL}/${formData.userId}`, formData, { headers: getAuthHeader() });
+                // --- حالة التعديل (Update) : كنستعملو FormData حيت كاين ملف/تصويرة ---
+                const dataToSend = new FormData();
+                Object.keys(formData).forEach(key => {
+                    // @ts-ignore
+                    if (formData[key] !== null) dataToSend.append(key, formData[key]);
+                });
+
+                await axios.put(`${API_URL}/${formData.userId}`, dataToSend, {
+                    headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' }
+                });
+                alert("Modifié avec succès ✅");
             } else {
-                await axios.post(API_URL, formData, { headers: getAuthHeader() });
+                // --- حالة إنشاء جديد (Create) : صيفطي JSON عادي حيت الـ Backend كيتسنى @RequestBody ---
+                // كنحيدو confirmPassword باش ما تمشيش لـ Java
+                const { confirmPassword, userId, ...payload } = formData;
+
+                await axios.post(API_URL, payload, {
+                    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }
+                });
+                alert("Client créé avec succès ✅");
             }
+
             setIsFormOpen(false);
             setFormData(initialForm);
             fetchClients();
-        } catch (error) { alert("Erreur lors de l'enregistrement"); }
-        finally { setIsLoading(false); }
+        } catch (error: any) {
+            console.error("Error details:", error.response?.data);
+            alert("Erreur lors de l'enregistrement: " + (error.response?.data?.message || "Check Console"));
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleDelete = async (id: number) => {
@@ -91,30 +114,30 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
                         </button>
                     </div>
                     <div className="table-container">
-                    <table className="custom-table">
-                        <thead>
-                        <tr><th>Nom Complet</th><th>Contact</th><th>CNI</th><th>Zone</th><th>Actions</th></tr>
-                        </thead>
-                        <tbody>
-                        {currentItems.map((c) => (
-                            <tr key={c.userId}>
-                                <td style={{ display: 'flex', alignItems: 'center' }}>
-                                    <FaUser style={{ marginRight: '10px', color: '#777', flexShrink: 0 }} />
-                                    <span>{c.firstName} {c.lastName}</span>
-                                </td>                                <td>{c.phone} <br/><small style={{color:'#888'}}>{c.email}</small></td>
-                                <td>{c.cni || "---"}</td>
-                                <td><span className="zone-badge">{c.zone}</span></td>
-                                <td className="action-buttons">
+                        <table className="custom-table">
+                            <thead>
+                            <tr><th>Nom Complet</th><th>Contact</th><th>CNI</th><th>Zone</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                            {currentItems.map((c) => (
+                                <tr key={c.userId}>
+                                    <td style={{ display: 'flex', alignItems: 'center' }}>
+                                        <FaUser style={{ marginRight: '10px', color: '#777', flexShrink: 0 }} />
+                                        <span>{c.firstName} {c.lastName}</span>
+                                    </td>                                <td>{c.phone} <br/><small style={{color:'#888'}}>{c.email}</small></td>
+                                    <td>{c.cni || "---"}</td>
+                                    <td><span className="zone-badge">{c.zone}</span></td>
+                                    <td className="action-buttons">
 
-                                    <FaEye className="icon-view" onClick={() => { setSelectedClient(c); setShowDetails(true); }} />
-                                    <FaEdit className="icon-edit" onClick={() => { setFormData({...formData, ...c, userId: c.userId.toString()}); setIsEditing(true); setIsFormOpen(true); }} />
-                                    <FaTrash className="icon-delete" onClick={() => handleDelete(c.userId)} />
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-</div>
+                                        <FaEye className="icon-view" onClick={() => { setSelectedClient(c); setShowDetails(true); }} />
+                                        <FaEdit className="icon-edit" onClick={() => { setFormData({...formData, ...c, userId: c.userId.toString()}); setIsEditing(true); setIsFormOpen(true); }} />
+                                        <FaTrash className="icon-delete" onClick={() => handleDelete(c.userId)} />
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
                     {totalPages > 1 && (
                         <div className="pagination-container">
                             <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)} className="page-nav-btn"><FaChevronLeft /></button>

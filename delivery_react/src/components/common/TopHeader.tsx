@@ -10,7 +10,7 @@ const TopHeader = ({ isMenuOpen, setIsMenuOpen, activeTab, user }: any) => {
     // دابا الاسم كيجي من الـ prop (user)، إلا ما كانش كيرجع "Utilisateur"
     const displayName = user && (user.firstName || user.lastName)
         ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-        : "Utilisateur";
+        : "Admin";
 
     const toggleMenu = (e: React.MouseEvent) => {
         e.stopPropagation();

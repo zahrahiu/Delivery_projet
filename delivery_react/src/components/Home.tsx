@@ -94,43 +94,43 @@ const Home: React.FC = () => {
             {/* FEATURES WITH ICONS */}
             <section id="fonctionnalites" className="features">
                 <div className="container">
-                    <h2 className="section-title">Nos Fonctionnalités</h2>
+                    <h2 className="section-title2">Nos Fonctionnalités</h2>
 
                     <div className="features-grid">
                         <div className="feature-card animate-card" style={{ "--delay": "0s" } as React.CSSProperties}>
                             <div className="feature-icon"><FaTruck /></div>
                             <h3>Suivi en temps réel</h3>
-                            <p>Suivez vos colis à chaque étape et obtenez des mises à jour instantanées pour rester informé en permanence sur l'état de vos livraisons.</p>
+                            <p>Localisez vos colis à chaque étape avec des mises à jour instantanées.</p>
                         </div>
 
                         <div className="feature-card animate-card" style={{ "--delay": "0.2s" } as React.CSSProperties}>
                             <div className="feature-icon"><FaBell /></div>
-                            <h3>Notifications automatiques</h3>
-                            <p>Recevez des alertes en temps réel pour chaque événement lié à vos colis, afin que vous puissiez réagir rapidement et efficacement.</p>
+                            <h3>Notifications</h3>
+                            <p>Alertes automatiques pour chaque événement important lié à vos livraisons.</p>
                         </div>
 
                         <div className="feature-card animate-card" style={{ "--delay": "0.4s" } as React.CSSProperties}>
                             <div className="feature-icon"><FaMoneyBillWave /></div>
-                            <h3>Gestion des encaissements</h3>
-                            <p>Gérez vos paiements facilement, suivez l'historique des transactions et assurez une transparence totale pour toutes vos opérations financières.</p>
+                            <h3>Encaissements</h3>
+                            <p>Gestion simplifiée des paiements et historique transparent des transactions.</p>
                         </div>
 
                         <div className="feature-card animate-card" style={{ "--delay": "0.6s" } as React.CSSProperties}>
                             <div className="feature-icon"><FaChartLine /></div>
                             <h3>Analyses & Rapports</h3>
-                            <p>Obtenez des rapports détaillés et des graphiques sur vos performances de livraison pour mieux comprendre vos flux et optimiser votre logistique.</p>
+                            <p>Statistiques détaillées pour optimiser vos performances logistiques.</p>
                         </div>
 
                         <div className="feature-card animate-card" style={{ "--delay": "0.8s" } as React.CSSProperties}>
                             <div className="feature-icon"><FaHeadset /></div>
                             <h3>Support 24/7</h3>
-                            <p>Notre équipe d'assistance est disponible à tout moment pour résoudre vos problèmes et répondre à vos questions afin de garantir un service sans interruption.</p>
+                            <p>Assistance technique disponible à tout moment pour vous accompagner.</p>
                         </div>
 
                         <div className="feature-card animate-card" style={{ "--delay": "1s" } as React.CSSProperties}>
                             <div className="feature-icon"><FaTruck /></div>
-                            <h3>Livraison rapide</h3>
-                            <p>Profitez d'un service de livraison rapide et fiable qui assure que vos colis arrivent à temps, chaque fois, avec un suivi détaillé et précis.</p>
+                            <h3>Livraison Express</h3>
+                            <p>Service rapide et fiable garantissant l'arrivée de vos colis dans les délais.</p>
                         </div>
                     </div>
                 </div>
@@ -139,7 +139,7 @@ const Home: React.FC = () => {
 
             <section id="comment-ca-marche" className="how-it-works">
                 <div className="container">
-                    <h2 className="section-title">Comment ça marche</h2>
+                    <h2 className="section-title2">Comment ça marche</h2>
                     <p className="section-subtitle">
                         Un processus optimisé en quatre étapes pour assurer une livraison efficace.
                     </p>
@@ -157,10 +157,9 @@ const Home: React.FC = () => {
                                 </div>
                                 <h3>Arrivée du colis</h3>
                                 <p>
-                                    Votre colis est soigneusement enregistré dans notre système dès son arrivée.
-                                    Toutes les informations nécessaires sont vérifiées afin d’assurer un suivi précis
-                                    et une gestion optimale dès la première étape.
-                                </p>                            </div>
+                                    Enregistrement immédiat du colis dans notre système dès sa réception pour un suivi précis.
+                                </p>
+                            </div>
 
                             <div className="timeline-step">
                                 <div className="timeline-icon">
@@ -168,10 +167,9 @@ const Home: React.FC = () => {
                                 </div>
                                 <h3>Préparation</h3>
                                 <p>
-                                    Une fois enregistré, le colis passe par une phase de vérification et de préparation.
-                                    Notre équipe s’assure que toutes les conditions sont réunies pour garantir une
-                                    livraison rapide et sécurisée.
-                                </p>                            </div>
+                                    Vérification rigoureuse et tri logistique pour garantir une expédition sécurisée.
+                                </p>
+                            </div>
 
                             <div className="timeline-step">
                                 <div className="timeline-icon">
@@ -179,10 +177,9 @@ const Home: React.FC = () => {
                                 </div>
                                 <h3>Livraison</h3>
                                 <p>
-                                    Un livreur professionnel prend en charge votre colis et le transporte
-                                    dans les meilleures conditions. Grâce au suivi en temps réel, vous
-                                    pouvez visualiser chaque étape du trajet.
-                                </p>                            </div>
+                                    Prise en charge par le livreur avec un suivi en temps réel jusqu'à votre destination.
+                                </p>
+                            </div>
 
                             <div className="timeline-step">
                                 <div className="timeline-icon">
@@ -190,9 +187,9 @@ const Home: React.FC = () => {
                                 </div>
                                 <h3>Confirmation</h3>
                                 <p>
-                                    Une notification de confirmation est envoyée immédiatement après la livraison.
-                                    Vous disposez ainsi d’une preuve fiable que le colis est bien arrivé à destination.
-                                </p>                            </div>
+                                    Notification instantanée dès la remise du colis, servant de preuve de livraison finale.
+                                </p>
+                            </div>
 
                         </div>
                     </div>

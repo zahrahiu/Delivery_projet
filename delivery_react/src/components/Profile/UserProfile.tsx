@@ -16,6 +16,26 @@ const UserProfile: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("profile");
 
+    const handleBack = () => {
+        // كنشوفو الـ role ديال المستخدم (اللي ديجا عندك في الـ userData أو formData)
+        const role = userData?.role || "CLIENT"; // default هي CLIENT
+
+        switch (role) {
+            case "ADMIN":
+                navigate('/admin');
+                break;
+            case "DISPATCHER":
+                navigate('/dispatcher');
+                break;
+            case "LIVREUR":
+                navigate('/livreur');
+                break;
+            case "CLIENT":
+            default:
+                navigate('/client');
+                break;
+        }
+    };
     useEffect(() => {
         const fetchFullProfile = async () => {
             try {
@@ -59,8 +79,9 @@ const UserProfile: React.FC = () => {
                 />
                 <section className="content-body">
                     <div className="profile-page-wrapper">
-                        <button className="back-btn" onClick={() => navigate('/client')}><FaArrowLeft /> Retour</button>
-
+                        <button className="back-btn" onClick={handleBack}>
+                            <FaArrowLeft /> Retour au Dashboard
+                        </button>
                         <div className="profile-container">
                             <div className="profile-card-header">
                                 <div className="avatar-section">
