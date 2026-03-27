@@ -1,36 +1,40 @@
-const db = require('../config/db');
+const tarifService = require('../services/tarifService');
 
-// جلب الثمن على حسب المدينة
 exports.getTarifByVille = async (req, res) => {
-    const { ville } = req.params;
     try {
-        const result = await db.query(
-            'SELECT * FROM tarifs WHERE UPPER(ville) = UPPER($1)',
-            [ville]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({ message: "المدينة غير مسجلة في النظام" });
-        }
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: "خطأ في السيرفر: " + err.message });
-    }
+        const data = await tarifService.getTarifByVille(req.params.ville);
+        if (!data) return res.status(404).json({ message: "La ville n'est pas enregistrée" });
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 };
 
-// إضافة أو تحديث ثمن مدينة (لـ Admin/Dispatcher)
-exports.upsertTarif = async (req, res) => {
-    const { ville, prix_standard, prix_premium } = req.body;
+exports.updateTarif = async (req, res) => {
     try {
-        const query = `
-            INSERT INTO tarifs (ville, prix_standard, prix_premium)
-            VALUES ($1, $2, $3)
-            ON CONFLICT (ville) DO UPDATE 
-            SET prix_standard = $2, prix_premium = $3
-            RETURNING *;
-        `;
-        const result = await db.query(query, [ville, prix_standard, prix_premium]);
-        res.status(201).json(result.rows[0]);
+        const data = await tarifService.updateTarif(req.params.id, req.body);
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.getAllTarifs = async (req, res) => {
+    try {
+        const data = await tarifService.getAllTarifs();
+        res.json(data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+// ضرووووري تزيد هادي هنا باش الـ Router يلقاها
+exports.deleteTarif = async (req, res) => {
+    try {
+        const deleted = await tarifService.deleteTarif(req.params.id);
+        if (!deleted) return res.status(404).json({ error: "Ville non trouvée" });
+        res.json({ message: "Ville supprimée avec succès" });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+};
+
+exports.createTarif = async (req, res) => {
+    try {
+        const data = await tarifService.createTarif(req.body);
+        res.status(201).json(data);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

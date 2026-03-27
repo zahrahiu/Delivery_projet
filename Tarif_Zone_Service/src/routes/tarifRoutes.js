@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const tarifController = require('../controllers/tarifController');
-const verifyToken = require('../middlewares/auth'); // استيراد العساس
+const verifyToken = require('../middlewares/auth');
 
-// مسموح للجميع يشوفو الأثمنة
+router.post('/', verifyToken, tarifController.createTarif);
+router.get('/', tarifController.getAllTarifs);
 router.get('/:ville', tarifController.getTarifByVille);
-
-// مسموح فقط لـ Admin/Dispatcher يغيرو الأثمنة (زدنا verifyToken)
-router.post('/', verifyToken, tarifController.upsertTarif);
+router.put('/:id', verifyToken, tarifController.updateTarif);
+router.delete('/:id', verifyToken, tarifController.deleteTarif);
 
 module.exports = router;
