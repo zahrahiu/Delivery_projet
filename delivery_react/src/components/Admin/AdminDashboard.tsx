@@ -8,6 +8,8 @@ import TopHeader from "../common/TopHeader";
 import DispatchersTab from "./DispatchersTab";
 import LivreursTab from "./LivreursTab";
 import ClientsTab from "./ClientsTab";
+import VillesTab from "./VillesTab";
+import ZonesTab from "./ZonesTab";
 
 const deliveryData = [
     { month: 'Jan', delivered: 400, returned: 50 },
@@ -190,20 +192,21 @@ const AdminDashboard: React.FC = () => {
                         </div>
                     )}
 
-                    {/* التبويب الخاص بالـ Dispatchers */}
                     {activeTab === "dispatchers" && (
                         <DispatchersTab onDispatchersUpdate={fetchCounts} />
                     )}
 
-                    {/* التبويب الخاص بالـ Livreurs */}
                     {activeTab === "livreurs" && (
                         <LivreursTab onLivreursUpdate={fetchCounts} />
                     )}
 
-                    {/* التبويب الخاص بالـ Clients */}
                     {activeTab === "clients" && (
                         <ClientsTab onClientsUpdate={fetchCounts} />
                     )}
+
+                    {activeTab === "villes" && <VillesTab />}
+
+                    {activeTab == "zones" && <ZonesTab/>}
 
                 </section>
             </main>

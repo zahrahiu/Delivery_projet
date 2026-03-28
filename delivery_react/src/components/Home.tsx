@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import "./Home.css";
 import heroImage from "../assets/QribLik_LOGO.png";
 import packageImage from "../assets/undraw_deliveries_qutl.svg";
@@ -14,23 +14,39 @@ import {
     FaChartLine,FaBox, FaClipboardCheck, FaTruckMoving, FaCheckCircle,
     FaHeadset,
 } from "react-icons/fa";
+import axios from "axios";
 
 const Home: React.FC = () => {
     const [activeTab, setActiveTab] = useState("client");
     const navigate = useNavigate();
-    const [selectedCity, setSelectedCity] = useState("Larache");
 
-    const cities = [
-        { name: "Larache", price: 40 },
-        { name: "Tanger", price: 50 },
-        { name: "Tétouan", price: 45 },
-        { name: "Agadir", price: 55 },
-        { name: "Taroudant", price: 48 },
-    ];
+    const [villes, setVilles] = useState<any[]>([]); // لتخزين المدن من الـ API
+    const [selectedCity, setSelectedCity] = useState(""); // المدينة المختارة
+    const [loading, setLoading] = useState(true);
 
-    const selectedCityData = cities.find(
-        (city) => city.name === selectedCity
+    const API_URL = "http://localhost:5005/api/tarifs";
+
+    useEffect(() => {
+        const fetchVilles = async () => {
+            try {
+                const res = await axios.get(API_URL);
+                setVilles(res.data);
+                if (res.data.length > 0) {
+                    setSelectedCity(res.data[0].ville); // اختيار أول مدينة تلقائياً
+                }
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching prices:", err);
+                setLoading(false);
+            }
+        };
+        fetchVilles();
+    }, []);
+
+    const selectedCityData = villes.find(
+        (v) => v.ville === selectedCity
     );
+
     return (
         <div className="qrlib-container">
             {/* NAVBAR */}
@@ -213,39 +229,41 @@ const Home: React.FC = () => {
 
             <section className="pricing-dark">
                 <div className="pricing-container">
-
                     <span className="pricing-badge">Couverture et tarifs</span>
-
-                    <h2 className="pricing-title">
-                        Prix de livraison par ville
-                    </h2>
-
+                    <h2 className="pricing-title">Prix de livraison par ville</h2>
                     <p className="pricing-subtitle">
-                        Recherchez une ville pour voir les tarifs de livraison standard et premium.
+                        Recherchez une ville pour voir les tarifs de livraison.
                     </p>
 
-                    {/* Select */}
-                    <div className="select-wrapper">
-                        <select
-                            value={selectedCity}
-                            onChange={(e) => setSelectedCity(e.target.value)}
-                        >
-                            {cities.map((city, index) => (
-                                <option key={index} value={city.name}>
-                                    {city.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    {loading ? (
+                        <p style={{ color: "white" }}>Chargement des tarifs...</p>
+                    ) : (
+                        <>
+                            {/* Select الديناميكي */}
+                            <div className="select-wrapper">
+                                <select
+                                    value={selectedCity}
+                                    onChange={(e) => setSelectedCity(e.target.value)}
+                                >
+                                    {villes.map((v) => (
+                                        <option key={v.id} value={v.ville}>
+                                            {v.ville}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                    {/* Result */}
-                    <div className="price-result">
-                        <span className="city-name">{selectedCityData?.name}</span>
-                        <span className="city-price">
-        {selectedCityData?.price} DH
-      </span>
-                    </div>
-
+                            {/* Result الديناميكي */}
+                            {selectedCityData && (
+                                <div className="price-result">
+                                    <span className="city-name">{selectedCityData.ville}</span>
+                                    <span className="city-price">
+                            {selectedCityData.frais_livraison} DH
+                        </span>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </section>
 

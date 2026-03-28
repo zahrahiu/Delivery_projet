@@ -22,7 +22,7 @@ const TopHeader = ({ isMenuOpen, setIsMenuOpen, activeTab, user }: any) => {
     const handleLogout = (e: React.MouseEvent) => {
         e.stopPropagation();
         localStorage.removeItem("token");
-        navigate("/login"); // أحسن من window.location.href
+        navigate("/login");
     };
 
     return (

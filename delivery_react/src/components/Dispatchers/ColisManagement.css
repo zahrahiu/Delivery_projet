@@ -1,62 +1,418 @@
-.parcel-form-wrapper {
-    background: white;
-    width: 100%;
-    max-width: 600px;
-    margin: 20px auto;
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+/* --- Container الرئيسي --- */
+.colis-admin-container {
+    padding: 30px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.parcel-title {
-    color: #5d6b6b;
-    text-align: center;
+.colis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
+}
+
+.header-title h2 {
+    margin: 0;
+    color: #2d3436;
     font-size: 24px;
 }
 
-.parcel-form-group {
-    margin-bottom: 20px;
+.header-title p {
+    margin: 5px 0 0 0;
+    color: #636e72;
+    font-size: 14px;
 }
 
-.parcel-form-group label {
-    display: block;
-    font-size: 13px;
+/* --- Stats Cards --- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f1f1f1;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.stat-icon.pending { background: #fff4e5; color: #ff9800; }
+.stat-icon.transit { background: #e3f2fd; color: #2196f3; }
+.stat-icon.delivered { background: #e8f5e9; color: #4caf50; }
+
+.stat-info h3 { margin: 0; font-size: 20px; color: #2c3e50; }
+.stat-info p { margin: 0; font-size: 13px; color: #8898aa; font-weight: 500; }
+
+/* --- Search Bar (الطويلة) --- */
+.search-bar-container {
+    background: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+    box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.search-bar-container input {
+    flex: 1; /* كتعمر البلاصة كاملة */
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: #333;
+    background: transparent;
+}
+
+.search-icon {
+    color: #888;
+    font-size: 18px;
+}
+
+/* --- Table Styling --- */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    padding: 15px;
+    font-size: 12px;
+    color: #8898aa;
+    text-transform: uppercase;
+    border-bottom: 2px solid #f8f9fa;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 15px;
+    border-bottom: 1px solid #f8f9fa;
+    font-size: 14px;
+    color: #525f7f;
+}
+
+.tracking {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
     color: #5d6b6b;
-    margin-bottom: 8px;
-    font-weight: 600;
+    background: #f1f3f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.status-text {
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 20px;
     text-transform: uppercase;
 }
 
-.parcel-form-group input {
+.status-text.PENDING { color: #f39c12; background: #fff9ef; }
+.status-text.IN_TRANSIT { color: #3498db; background: #eff9ff; }
+.status-text.DELIVERED { color: #2ecc71; background: #f0fff4; }
+
+/* --- Icons Actions (المكبرة والمقادة) --- */
+.text-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+}
+
+.edit-icon {
+    color: #4a90e2;
+    font-size: 22px; /* تكبير */
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.edit-icon:hover {
+    color: #2980b9;
+    transform: scale(1.2);
+}
+
+.delete-icon {
+    color: #e74c3c;
+    font-size: 20px; /* تكبير */
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-icon:hover {
+    color: #c0392b;
+    transform: scale(1.2);
+}
+
+/* --- Modals Stylish Design --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(45, 52, 54, 0.5);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.stylish-modal {
+    width: 90%;
+    max-width: 600px;
+    background: white;
+    border-radius: 16px;
+    padding: 35px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.title-with-icon h3 { margin: 0; color: #2d3436; }
+
+.header-icon { color: #5d6b6b; font-size: 24px; }
+
+.close-icon {
+    cursor: pointer;
+    color: #b2bec3;
+    font-size: 20px;
+    transition: color 0.2s;
+}
+
+.close-icon:hover { color: #d63031; }
+
+/* --- Stylish Form --- */
+.stylish-form .form-section {
+    margin-bottom: 25px;
+}
+
+.stylish-form h4 {
+    font-size: 13px;
+    color: #b2bec3;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #f1f1f1;
+    padding-bottom: 8px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2d3436;
+    margin-bottom: 8px;
+}
+
+.input-group input {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #d5e5e5;
+    padding: 12px 15px;
+    border: 1px solid #dfe6e9;
     border-radius: 10px;
-    outline: none;
-    transition: 0.3s;
-    font-size: 16px;
+    font-size: 14px;
+    background: #fcfcfc;
+    transition: all 0.2s;
+    box-sizing: border-box;
 }
 
-.parcel-form-group input:focus {
+.input-group input:focus {
     border-color: #5d6b6b;
-    box-shadow: 0 0 5px rgba(93, 107, 107, 0.2);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(93, 107, 107, 0.1);
+    outline: none;
 }
 
-.submit-parcel-btn {
-    width: 100%;
-    background-color: #5d6b6b;
+/* --- Buttons --- */
+.btn-add {
+    background: #2d3436;
     color: white;
     border: none;
-    padding: 14px;
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-add:hover { background: #000; }
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-cancel-light {
+    background: #f1f2f6;
+    color: #2d3436;
+    border: none;
+    padding: 12px 25px;
     border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
-    transition: 0.3s;
-    margin-top: 10px;
 }
 
-.submit-parcel-btn:hover {
-    background-color: #3b4e61;
-    transform: translateY(-2px);
+.btn-submit-dark {
+    background: #5d6b6b;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+
+/* ستايل عام للـ Select وسط الجدول */
+.status-select-mini {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    appearance: none; /* حيد السهم العادي ديال المتصفح */
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* الألوان على حسب الحالة */
+.status-select-mini.PENDING {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+.status-select-mini.ASSIGNED {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.status-select-mini.IN_TRANSIT {
+    background-color: #cce5ff;
+    color: #004085;
+    border: 1px solid #b8daff;
+}
+
+.status-select-mini.DELIVERED {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-select-mini.RETURNED {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-select-mini.CANCELLED {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
+}
+
+/* زواق الـ Hover */
+.status-select-mini:hover {
+    filter: brightness(0.95);
+    transform: scale(1.05);
+}
+
+/* ستايل للـ Options داخل الـ Select */
+.status-select-mini option {
+    background-color: white;
+    color: black;
+    font-weight: normal;
+}
+
+.status-select-mini {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 2px solid transparent;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    text-align: center;
+    width: 140px; /* توحيد العرض باش الجدول يجي مقاد */
+}
+
+/* الألوان الخاصة بكل حالة */
+.status-select-mini.PENDING { background-color: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.status-select-mini.ASSIGNED { background-color: #e0f2fe; color: #075985; border-color: #7dd3fc; }
+.status-select-mini.IN_TRANSIT { background-color: #dcfce7; color: #166534; border-color: #86efac; }
+.status-select-mini.DELIVERED { background-color: #34d399; color: #ffffff; border-color: #10b981; }
+.status-select-mini.RETURNED { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.status-select-mini.CANCELLED { background-color: #f3f4f6; color: #374151; border-color: #d1d5db; }
+
+/* تأثير عند المرور بالفأرة */
+.status-select-mini:hover {
+    filter: brightness(0.9);
+    transform: scale(1.02);
 }

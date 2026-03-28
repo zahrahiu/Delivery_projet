@@ -1,0 +1,134 @@
+/* Container l-kbir */
+.add-colis-embedded {
+    width: 100%;
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Card layout */
+.form-card-container {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    border: 1px solid #edf2f7;
+}
+
+/* Sections */
+.form-section {
+    margin-bottom: 45px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 25px; /* Faragh kbir bin l-unwan o l-row l-lowla */
+    font-size: 16px;
+    border-bottom: 2px solid #f8fafc;
+    padding-bottom: 12px;
+}
+
+.icon-blue { color: #3182ce; }
+.icon-green { color: #38a169; }
+.icon-orange { color: #dd6b20; }
+
+/* Grid Layout Fix - Hadchi houwa l-mohim */
+.input-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 30px; /* Faragh bin l-imin o l-issar */
+    row-gap: 25px;    /* Faragh bin s-stora (Bach label matrkebch 3la li fo9ha) */
+    width: 100%;
+}
+
+.input-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Faragh sghir o n9i bin label o input */
+    width: 100%;
+}
+
+.input-field.full-width {
+    grid-column: span 2;
+    margin-top: 5px;
+}
+
+.input-field label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #4a5568;
+    margin: 0;
+    display: block;
+}
+
+.input-field input, .input-field select {
+    width: 100%;
+    padding: 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-size: 14px;
+    box-sizing: border-box; /* Darouri bach l-padding may-infli-ch l-input */
+    transition: all 0.2s ease;
+}
+
+.input-field input:focus, .input-field select:focus {
+    outline: none;
+    border-color: #3182ce;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.1);
+}
+
+/* Header & Back Button */
+.form-header-simple {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.btn-back-link {
+    background: none;
+    border: none;
+    color: #718096;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Submit Button */
+.form-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 30px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-submit-full {
+    background: #2d3748;
+    color: white;
+    padding: 16px 60px;
+    border-radius: 50px;
+    border: none;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-submit-full:hover {
+    background: #1a202c;
+    transform: translateY(-2px);
+}

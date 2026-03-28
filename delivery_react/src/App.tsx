@@ -9,7 +9,8 @@ import LivreurDashboard from "./components/Livreurs/LivreurDashboard";
 import ClientDashboard from "./components/Clients/ClientDashboard";
 import UserProfile from "./components/Profile/UserProfile";
 import EditProfile from "./components/Profile/EditProfile";
-
+import ColisManagement from "./components/Dispatchers/ ColisManagement";
+import AddColisForm from "./components/Dispatchers/AddColisForm";
 function App() {
     return (
         <BrowserRouter>
@@ -59,6 +60,7 @@ function App() {
                 // وسط الـ Routes
                 <Route path="/profile" element={<ProtectedRoute allowedRoles={["ADMIN", "DISPATCHER", "LIVREUR", "CLIENT"]}><UserProfile /></ProtectedRoute>} />
                 <Route path="/edit-profile" element={<EditProfile />} />
+                <Route path="/admin/colis" element={<ColisManagement />} />
             </Routes>
         </BrowserRouter>
     );
