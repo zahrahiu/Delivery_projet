@@ -1,6 +1,7 @@
 package org.delivery.parcel_service.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.delivery.parcel_service.domain.entity.Parcel;
 import org.delivery.parcel_service.domain.entity.ParcelStatus;
 import org.delivery.parcel_service.domain.repository.ParcelRepository;
@@ -24,75 +25,75 @@ public class ParcelServiceImpl implements ParcelService {
     private final ParcelRepository parcelRepository;
     private final ParcelMapper parcelMapper;
     private final ParcelEventProducer parcelEventProducer;
+
     @Override
     @Transactional
     public ParcelResponseDTO createParcel(ParcelRequestDTO dto) {
         Parcel parcel = parcelMapper.toEntity(dto);
-
-        // 1. الحالة المبدئية
         parcel.setStatus(ParcelStatus.PENDING);
         parcel.setTrackingNumber("TRK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 
-        // 2. المنطق: السيرفيس خاصو يخدم بـ logic ديال الـ assignment
-        // تقدري تزيدي هنا call لـ service آخر أو ببساطة تركيه null حتى يجي الـ Event
-
         Parcel savedParcel = parcelRepository.save(parcel);
 
-        // 3. تصيفطو للإيفينت (باش الـ Delivery_Service يعرف بلي كاين طرد جديد في ZONE-01)
-        parcelEventProducer.sendParcelCreatedEvent(parcelMapper.toResponse(savedParcel));
+        // كنصيفطو لـ Kafka بلا ما نحبسوا الـ Transaction حيت درنا @Async فـ الـ Producer
+        try {
+            parcelEventProducer.sendParcelCreatedEvent(parcelMapper.toResponse(savedParcel));
+        } catch (Exception e) {
+            System.err.println("Kafka logging failed but parcel saved: " + e.getMessage());
+        }
 
         return parcelMapper.toResponse(savedParcel);
     }
 
     @Override
-    public ParcelResponseDTO getParcelByTrackingNumber(String trackingNumber) {
-        Parcel parcel = parcelRepository.findByTrackingNumber(trackingNumber)
-                .orElseThrow(() -> new RuntimeException("Parcel not found: " + trackingNumber));
-        return parcelMapper.toResponse(parcel);
-    }
-
-    @Override
     public List<ParcelResponseDTO> getParcels(Principal principal) {
-        // 1. خاصنا نعرفو الـ Role والـ ID ديال اللي داخل (تقدري تجيبيهم من الـ JWT)
-        // تبسيط: الـ Principal كيعطينا السمية، والـ JWT كيعطينا الـ Roles
-        boolean isAdmin = checkRole(principal, "ROLE_ADMIN");
+        if (!(principal instanceof JwtAuthenticationToken jwt)) return List.of();
 
-        if (isAdmin) {
+        var authorities = jwt.getAuthorities().stream()
+                .map(a -> a.getAuthority())
+                .toList();
+
+        if (authorities.contains("ROLE_DISPATCHER") || authorities.contains("ROLE_ADMIN")) {
             return parcelRepository.findAll().stream()
                     .map(parcelMapper::toResponse).toList();
-        } else {
-            // Client: كنجيبو غير الطرود ديالو بالـ senderId
-            Integer userId = getUserIdFromPrincipal(principal);
+        }
+        // Client كيشوف غير طرودو
+        Object userIdObj = jwt.getTokenAttributes().get("userId");
+        if (userIdObj != null) {
+            Integer userId = Integer.parseInt(userIdObj.toString());
             return parcelRepository.findBySenderId(userId).stream()
                     .map(parcelMapper::toResponse).toList();
         }
+
+        return List.of();
     }
 
     @Override
     public void assignToLivreur(Long id, String livreurId) {
-        Parcel parcel = parcelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Parcel not found"));
+        Parcel parcel = parcelRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
         parcel.setAssignedLivreurId(livreurId);
         parcel.setStatus(ParcelStatus.IN_TRANSIT);
         parcelRepository.save(parcel);
     }
 
-    // هادي ميتود مساعدة باش تعرفي الـ Roles
-    private boolean checkRole(Principal principal, String role) {
-        if (principal instanceof JwtAuthenticationToken jwt) {
-            return jwt.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals(role));
-        }
-        return false;
+    @Override
+    public ParcelResponseDTO getParcelByTrackingNumber(String trackingNumber) {
+        return parcelRepository.findByTrackingNumber(trackingNumber)
+                .map(parcelMapper::toResponse)
+                .orElseThrow(() -> new RuntimeException("Parcel not found"));
     }
 
-    // هادي ميتود مساعدة باش تجيبي الـ ID ديال الـ User
-    private Integer getUserIdFromPrincipal(Principal principal) {
-        if (principal instanceof JwtAuthenticationToken jwt) {
-            // مفترضة أن الـ ID مخبي فـ الـ Claims ديال الـ Token
-            return (Integer) jwt.getTokenAttributes().get("userId");
-        }
-        return null;
+    @Override
+    @Transactional
+    public void updateStatus(Long id, ParcelStatus status) {
+        Parcel parcel = parcelRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        parcel.setStatus(status);
+        parcelRepository.save(parcel);
+    }
+
+    @Override
+    public List<ParcelResponseDTO> getParcelsByZone(String zoneId) {
+        return parcelRepository.findByZoneId(zoneId).stream().map(parcelMapper::toResponse).toList();
     }
 
     @Transactional
@@ -102,35 +103,21 @@ public class ParcelServiceImpl implements ParcelService {
 
         parcel.setWeight(dto.getWeight());
         parcel.setDeliveryAddress(dto.getDeliveryAddress());
+        parcel.setZoneId(dto.getZoneId());
+
+        parcel.setSenderId(dto.getSenderId());
+        parcel.setSenderName(dto.getSenderName());
+        parcel.setSenderPhone(dto.getSenderPhone());
+
+        if (dto.getStatus() != null) {
+            parcel.setStatus(dto.getStatus());
+        }
 
         return parcelMapper.toResponse(parcelRepository.save(parcel));
     }
 
     public void deleteParcel(Long id) {
-        if (!parcelRepository.existsById(id)) {
-            throw new RuntimeException("Parcel not found");
-        }
-        parcelRepository.deleteById(id);
+        Parcel parcel = parcelRepository.findById(id).orElseThrow();
+        parcelRepository.delete(parcel);
     }
-
-    @Override
-    @Transactional
-    public void updateStatus(Long id, ParcelStatus status) {
-        Parcel parcel = parcelRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Parcel not found"));
-
-        parcel.setStatus(status);
-        parcelRepository.save(parcel);
-
-        // نصيحة: هنا فين خاصك تصيفطي Event جديد للـ Kafka
-        // باش باقي السيرفيسات يعرفو أن الحالة تبدلات (مثلاً: Notification Service)
-    }
-
-    @Override
-    public List<ParcelResponseDTO> getParcelsByZone(String zoneId) {
-        return parcelRepository.findByZoneId(zoneId).stream()
-                .map(parcelMapper::toResponse)
-                .toList();
-    }
-
 }

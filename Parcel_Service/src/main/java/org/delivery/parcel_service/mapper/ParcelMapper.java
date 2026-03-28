@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ParcelMapper {
 
-    // تحويل من DTO لـ Entity (باش نخزنو فـ DB)
-    // داخل ParcelMapper.java
+
 
     public Parcel toEntity(ParcelRequestDTO dto) {
         return Parcel.builder()
@@ -18,10 +17,9 @@ public class ParcelMapper {
                 .deliveryAddress(dto.getDeliveryAddress())
                 .zoneId(dto.getZoneId())
                 .senderId(dto.getSenderId())
-                // زيدي هاد السطور ضروري:
                 .senderName(dto.getSenderName())
                 .senderPhone(dto.getSenderPhone())
-                .senderEmail(dto.getClientEmail()) // كنقلبو clientEmail لـ senderEmail
+                .senderEmail(dto.getClientEmail())
                 .status(ParcelStatus.PENDING)
                 .build();
     }

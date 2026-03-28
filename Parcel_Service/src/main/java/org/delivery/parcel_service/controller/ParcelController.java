@@ -20,44 +20,43 @@ public class ParcelController {
 
     private final ParcelService parcelService;
 
-    // بدلي hasAuthority بـ hasRole
     @PostMapping
-    @PreAuthorize("hasRole('DISPATCHER')")
+    // استعملنا ROLE_DISPATCHER حيت هي اللي كاينا فـ الـ claim "authorities"
+    @PreAuthorize("hasAuthority('ROLE_DISPATCHER')")
     public ResponseEntity<ParcelResponseDTO> createParcel(@RequestBody ParcelRequestDTO dto) {
         return new ResponseEntity<>(parcelService.createParcel(dto), HttpStatus.CREATED);
     }
 
-    // هادي مزيانة
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'CLIENT')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CLIENT', 'ROLE_DISPATCHER')")
     public ResponseEntity<List<ParcelResponseDTO>> getParcels(Principal principal) {
         return ResponseEntity.ok(parcelService.getParcels(principal));
     }
 
     @PatchMapping("/{id}/assign/{livreurId}")
-    @PreAuthorize("hasRole('DISPATCHER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_DISPATCHER', 'ROLE_ADMIN')")
     public ResponseEntity<Void> assignParcel(@PathVariable Long id, @PathVariable String livreurId) {
         parcelService.assignToLivreur(id, livreurId);
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyAuthority('ROLE_LIVREUR', 'ROLE_DISPATCHER', 'ROLE_ADMIN')")
+    public ResponseEntity<Void> updateStatus(@PathVariable Long id, @RequestParam ParcelStatus status) {
+        parcelService.updateStatus(id, status);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DISPATCHER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_DISPATCHER', 'ROLE_ADMIN')")
     public ResponseEntity<ParcelResponseDTO> updateParcel(@PathVariable Long id, @RequestBody ParcelRequestDTO dto) {
         return ResponseEntity.ok(parcelService.updateParcel(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')") // غير الأدمن اللي يقدر يحذف
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
     public ResponseEntity<Void> deleteParcel(@PathVariable Long id) {
         parcelService.deleteParcel(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('LIVREUR') or hasRole('DISPATCHER')")
-    public ResponseEntity<Void> updateStatus(@PathVariable Long id, @RequestParam ParcelStatus status) {
-        parcelService.updateStatus(id, status);
         return ResponseEntity.noContent().build();
     }
 }

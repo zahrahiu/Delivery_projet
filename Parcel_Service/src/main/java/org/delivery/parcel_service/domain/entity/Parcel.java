@@ -13,22 +13,20 @@ public class Parcel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // كود التتبع (مثلاً: PR-123456)
     @Column(unique = true, nullable = false)
     private String trackingNumber;
 
     private Double weight;
     private String deliveryAddress;
-    private String zoneId; // باش نحددو المنطقة اللي فيها الطرد
+    private String zoneId;
 
-    // بيانات الزبون (هنا كاين السر: هاد الداتا غتجي من Kafka من Users_Service)
     private Integer senderId;
     private String senderName;
     private String senderPhone;
     // داخل Parcel.java
-    private String senderEmail; // أو clientEmail حسب شنو سميتي فـ DTO
+    private String senderEmail;
     @Enumerated(EnumType.STRING)
     private ParcelStatus status;
 
-    private String assignedLivreurId; // زدنا هادي
+    private String assignedLivreurId;
 }
