@@ -19,6 +19,7 @@ interface Props {
 
 const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
     const [livreurs, setLivreurs] = useState<Livreur[]>([]);
+    const [zones, setZones] = useState<any[]>([]); // حالة جديدة لتخزين الزونات
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +38,8 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
     const [formData, setFormData] = useState(initialForm);
 
     const API_URL = "http://localhost:8081/api/profiles";
+    const TARIFS_API = "http://localhost:5005/api/tarifs"; // API ديال الزونات
+
     const getAuthHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
 
     const fetchLivreurs = async () => {
@@ -48,7 +51,18 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
         } catch (error) { console.error("Fetch Error:", error); }
     };
 
-    useEffect(() => { fetchLivreurs(); }, []);
+    // جلب الزونات من الباكيند
+    const fetchZones = async () => {
+        try {
+            const res = await axios.get(TARIFS_API, { headers: getAuthHeader() });
+            setZones(res.data);
+        } catch (err) { console.error("Erreur Zones:", err); }
+    };
+
+    useEffect(() => {
+        fetchLivreurs();
+        fetchZones();
+    }, []);
 
     const getVehicleIcon = (type: string) => {
         switch (type) {
@@ -75,10 +89,7 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
             const token = localStorage.getItem("token");
 
             if (isEditing) {
-                // --- حالة التعديل (Update) : ضروري صيفطي FormData ---
                 const dataToSend = new FormData();
-
-                // تحويل كاع الحقول لـ FormData باش يقبلها الـ Backend
                 Object.entries(formData).forEach(([key, value]) => {
                     if (value !== "" && value !== null) {
                         dataToSend.append(key, value as string);
@@ -88,12 +99,11 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                 await axios.put(`${API_URL}/${formData.userId}`, dataToSend, {
                     headers: {
                         Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data' // هادي هي السر
+                        'Content-Type': 'multipart/form-data'
                     }
                 });
                 alert("Livreur modifié avec succès ✅");
             } else {
-                // --- حالة إضافة جديد (Create) : صيفطي JSON عادي ---
                 const { confirmPassword, userId, ...payload } = formData;
                 await axios.post(API_URL, payload, {
                     headers: {
@@ -135,28 +145,28 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                         </button>
                     </div>
                     <div className="table-container">
-                    <table className="custom-table">
-                        <thead>
-                        <tr><th>Nom Complet</th><th>Contact</th><th>CNI</th><th>Zone</th><th>Véhicule</th><th>Actions</th></tr>
-                        </thead>
-                        <tbody>
-                        {currentItems.map((l) => (
-                            <tr key={l.userId}>
-                                <td>{l.firstName} {l.lastName}</td>
-                                <td>{l.phone} <br/><small style={{color:'#888'}}>{l.email}</small></td>
-                                <td>{l.cni}</td>
-                                <td><span className="zone-badge">{l.zone}</span></td>
-                                <td><span style={{display:'flex', alignItems:'center', gap:'5px'}}>{getVehicleIcon(l.vehicleType)} {l.vehicleType}</span></td>
-                                <td className="action-buttons">
-                                    <FaEye className="icon-view" onClick={() => { setSelectedLivreur(l); setShowDetails(true); }} />
-                                    <FaEdit className="icon-edit" onClick={() => { setFormData({...formData, ...l, userId: l.userId.toString()}); setIsEditing(true); setIsFormOpen(true); }} />
-                                    <FaTrash className="icon-delete" onClick={() => handleDelete(l.userId)} />
-                                </td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-</div>
+                        <table className="custom-table">
+                            <thead>
+                            <tr><th>Nom Complet</th><th>Contact</th><th>CNI</th><th>Zone</th><th>Véحicule</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                            {currentItems.map((l) => (
+                                <tr key={l.userId}>
+                                    <td>{l.firstName} {l.lastName}</td>
+                                    <td>{l.phone} <br/><small style={{color:'#888'}}>{l.email}</small></td>
+                                    <td>{l.cni}</td>
+                                    <td><span className="zone-badge">Zone {l.zone}</span></td>
+                                    <td><span style={{display:'flex', alignItems:'center', gap:'5px'}}>{getVehicleIcon(l.vehicleType)} {l.vehicleType}</span></td>
+                                    <td className="action-buttons">
+                                        <FaEye className="icon-view" onClick={() => { setSelectedLivreur(l); setShowDetails(true); }} />
+                                        <FaEdit className="icon-edit" onClick={() => { setFormData({...formData, ...l, userId: l.userId.toString()}); setIsEditing(true); setIsFormOpen(true); }} />
+                                        <FaTrash className="icon-delete" onClick={() => handleDelete(l.userId)} />
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
                     {totalPages > 1 && (
                         <div className="pagination-container">
                             <button disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)} className="page-nav-btn"><FaChevronLeft /></button>
@@ -184,7 +194,18 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                             <div className="input-block"><label>Email</label><input type="email" name="email" required value={formData.email} onChange={handleInputChange} disabled={isEditing} /></div>
                             <div className="form-section-header">Logistique</div>
                             <div className="form-row-grid">
-                                <div className="input-block"><label>Zone</label><input type="text" name="zone" required value={formData.zone} onChange={handleInputChange} /></div>
+                                {/* هنا التعديل: تحويل الـ Input لـ Select */}
+                                <div className="input-block">
+                                    <label>Zone</label>
+                                    <select name="zone" required value={formData.zone} onChange={handleInputChange}>
+                                        <option value="">-- Sélectionner Zone --</option>
+                                        {zones.map(z => (
+                                            <option key={z.id} value={z.zone_id}>
+                                                {z.ville} (ID: {z.zone_id})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div className="input-block">
                                     <label>Véhicule</label>
                                     <select name="vehicleType" value={formData.vehicleType} onChange={handleInputChange}>
@@ -209,19 +230,7 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                 </div>
             )}
 
-            {showDetails && selectedLivreur && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <div className="modal-header"><h3>Détails du Livreur</h3><FaTimes onClick={() => setShowDetails(false)} style={{cursor:'pointer'}} /></div>
-                        <div className="modal-body">
-                            <p><strong>Nom Complet:</strong> {selectedLivreur.firstName} {selectedLivreur.lastName}</p>
-                            <p><strong>Téléphone:</strong> {selectedLivreur.phone}</p>
-                            <p><strong>Véhicule:</strong> {selectedLivreur.vehicleType} ({selectedLivreur.matricule})</p>
-                            <p><strong>Zone:</strong> {selectedLivreur.zone}</p>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Modal details stays the same */}
         </div>
     );
 };

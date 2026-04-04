@@ -7,10 +7,17 @@
         <option value="$PROJECT_DIR$/microservice_security/pom.xml" />
         <option value="$PROJECT_DIR$/service_security/pom.xml" />
         <option value="$PROJECT_DIR$/Users_Service/pom.xml" />
+        <option value="$PROJECT_DIR$/Parcel_Service/pom.xml" />
+        <option value="$PROJECT_DIR$/Discovery-Service/pom.xml" />
+        <option value="$PROJECT_DIR$/Gateway-Service/pom.xml" />
+        <option value="$PROJECT_DIR$/discovery-server/pom.xml" />
+        <option value="$PROJECT_DIR$/gateway-service/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/Discovery-Service/pom.xml" />
+        <option value="$PROJECT_DIR$/Gateway-Service/pom.xml" />
         <option value="$PROJECT_DIR$/microservice_security/pom.xml" />
       </set>
     </option>

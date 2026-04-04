@@ -180,5 +180,11 @@ public class UserProfileServiceImpl implements UserProfileService {
         repository.deleteById(id);
     }
 
+    @Override
+    public List<UserResponseDTO> getDriversByZone(String zoneId) {
+        return repository.findByZone(zoneId).stream()
+                .map(mapper::toDTO)
+                .toList();
+    }
 
 }

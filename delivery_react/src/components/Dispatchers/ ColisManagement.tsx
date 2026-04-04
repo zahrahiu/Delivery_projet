@@ -14,7 +14,8 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [selectedParcel, setSelectedParcel] = useState<any>(null);
-
+    const [showLivreurModal, setShowLivreurModal] = useState(false);
+    const [livreurs, setLivreurs] = useState<any[]>([]); // باش نخزنو الليفرور
     const API_URL = "http://localhost:8082/api/parcels";
     const token = localStorage.getItem("token");
 
@@ -64,6 +65,48 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
         p.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.senderName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const fetchLivreurs = async () => {
+        try {
+            const res = await axios.get("http://localhost:8081/api/profiles", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // كنصفيو غير اللي عندهم دور LIVREUR
+            setLivreurs(res.data.filter((u: any) => u.role === "LIVREUR"));
+        } catch (err) {
+            console.error("Error fetching livreurs", err);
+        }
+    };
+
+    const handleAssignLivreur = async (parcel: any, livreurId: string) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            // 1. استعملي بورت 3001 الخاص بـ Delivery Service
+            // 2. استعملي trackingNumber في الـ URL
+            const url = `http://localhost:3001/deliveries/${parcel.trackingNumber}/assign`;
+
+            await axios.post(url,
+                { livreurId: livreurId }, // الـ Body الذي يتوقعه Node.js
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            await updateStatus(parcel, "ASSIGNED");
+
+            Swal.fire('Assigné !', 'Le colis a été attribué via Delivery Service.', 'success');
+            setShowLivreurModal(false);
+            fetchParcels();
+        } catch (err) {
+            console.error("Erreur assignation:", err);
+            Swal.fire('Erreur', "Échec de l'assignation dans le Delivery Service", 'error');
+        }
+    };
+
+    useEffect(() => {
+        fetchParcels();
+        fetchLivreurs(); // جيبيهم ملي يتحل المكون
+    }, []);
 
     const updateStatus = async (parcel: any, newStatus: string) => {
         // ⚠️ تأكدي أن id كاين قبل ما تبداي
@@ -132,7 +175,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
             <div className="colis-header">
                 <div className="header-title">
                     <h2>📦 Gestion des Colis</h2>
-                    <p>Système Qrib Lik - Master PFE</p>
                 </div>
                 <button className="btn-add" onClick={onAddClick}>
                     <FaPlus /> Nouveau Colis
@@ -174,6 +216,8 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                 />
             </div>
 
+
+
             {/* الجدول */}
             <div className="table-container shadow-sm">
                 <table>
@@ -210,6 +254,16 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                                     </select>
                                 </td>
                                 <td className="text-center">
+
+                                    <FaTruck
+                                        className="assign-icon"
+                                        style={{ color: '#27ae60', cursor: 'pointer', marginRight: '10px' }}
+                                        title="Assigner un livreur"
+                                        onClick={() => {
+                                            setSelectedParcel(p);
+                                            setShowLivreurModal(true);
+                                        }}
+                                    />
                                     <FaEdit
                                         className="edit-icon"
                                         title="Modifier"
@@ -233,9 +287,39 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                     )}
                     </tbody>
                 </table>
+
+                {showLivreurModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content-small">
+                            <h3>Assigner un livreur</h3>
+                            <p>Colis: {selectedParcel?.trackingNumber || selectedParcel?.id}</p>
+                            <div className="livreurs-list-mini">
+                                {livreurs.map(l => (
+                                    <div key={l.userId} className="livreur-item-select" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', padding: '5px', borderBottom: '1px solid #eee' }}>
+                                        <span>{l.firstName} {l.lastName}</span>
+                                        {/* هنا كان الخطأ: الـ button ما كانش مسدود مزيان والـ div كانت ناقصة */}
+                                        {/* داخل المودال عند زر "Choisir" */}
+                                        <button
+                                            className="btn-select"
+                                            onClick={() => handleAssignLivreur(selectedParcel, l.userId)} // مرري الكائن كاملاً
+                                            style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '5px 10px' }}
+                                        >
+                                            Choisir
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <button className="btn-close" onClick={() => setShowLivreurModal(false)} style={{ marginTop: '15px' }}>
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
+
+
 };
 
 export default ColisManagement;

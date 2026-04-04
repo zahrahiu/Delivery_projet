@@ -11,7 +11,6 @@ const pool = new Pool({
 
 const initDb = async () => {
     try {
-        // 1. كنكرييو zones هي الأولى (ضروري)
         const createZonesTable = `
             CREATE TABLE IF NOT EXISTS zones (
                 id SERIAL PRIMARY KEY,

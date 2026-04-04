@@ -2,25 +2,41 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
       <profile name="Annotation profile for Users_Service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/mapstruct/mapstruct-processor/1.5.5.Final/mapstruct-processor-1.5.5.Final.jar" />
         </processorPath>
         <module name="Users_Service" />
+      </profile>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="Parcel_Service" />
+        <module name="discovery-server" />
         <module name="service_security" />
+        <module name="gateway-service" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="Discovery-Service" target="17" />
+      <module name="Gateway-Service" target="17" />
       <module name="microservice_security" target="21" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Discovery-Service" options="-parameters" />
+      <module name="Gateway-Service" options="-parameters" />
+      <module name="Parcel_Service" options="-parameters" />
       <module name="Users_Service" options="-parameters" />
+      <module name="discovery-server" options="-parameters" />
+      <module name="gateway-service" options="-parameters" />
       <module name="microservice_security" options="-parameters" />
       <module name="service_security" options="-parameters" />
     </option>

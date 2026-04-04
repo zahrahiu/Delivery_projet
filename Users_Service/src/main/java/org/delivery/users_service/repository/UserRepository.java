@@ -13,4 +13,6 @@ public interface UserRepository extends JpaRepository<UserProfile, Integer> {
     boolean existsByCni(String cni);
     List<UserProfile> findByRole(RoleType role);
     Optional<UserProfile> findByEmail(String email);  // Retourner Optional<User> pas UserResponseDTO
+
+    List<UserProfile> findByZone(String zone);
 }

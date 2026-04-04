@@ -60,6 +60,11 @@ public class UserProfileController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/drivers/zone/{zoneId}")
+    public ResponseEntity<List<UserResponseDTO>> getDriversByZone(@PathVariable String zoneId) {
+        return ResponseEntity.ok(profileService.getDriversByZone(zoneId));
+    }
+
 
 
 }

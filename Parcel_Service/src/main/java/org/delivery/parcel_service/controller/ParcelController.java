@@ -15,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/parcels")
+@CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
 public class ParcelController {
 
