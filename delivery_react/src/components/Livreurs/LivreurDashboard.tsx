@@ -6,7 +6,11 @@ import TopHeader from "../common/TopHeader";
 const LivreurDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [userData, setUserData] = useState<any>(null); // State باش نحفظو بيانات السائق
+    const [userData, setUserData] = useState<any>(null);
+
+    // --- التعديل: استخدام الـ Gateway (8888) ---
+    const GATEWAY_URL = "http://localhost:8888";
+    const USER_PROFILE_API = `${GATEWAY_URL}/users-service/api/profiles/details`;
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -14,15 +18,18 @@ const LivreurDashboard: React.FC = () => {
                 const token = localStorage.getItem("token");
                 if (!token) return;
 
+                // استخراج الـ userId من الـ JWT Payload
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                const userId = payload.userId;
+                const userId = payload.userId; // تأكدي أن اسم الحقل في التوكن هو userId
 
-                const response = await axios.get(`http://localhost:8081/api/profiles/details/${userId}`, {
+                // جلب بيانات البروفايل عبر الـ Gateway
+                const response = await axios.get(`${USER_PROFILE_API}/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+
                 setUserData(response.data);
             } catch (error) {
-                console.error("خطأ في جلب بيانات السائق:", error);
+                console.error("Erreur lors de la récupération du profil livreur:", error);
             }
         };
         fetchUserData();
@@ -30,7 +37,6 @@ const LivreurDashboard: React.FC = () => {
 
     return (
         <div className="admin-container" onClick={() => setIsMenuOpen(false)}>
-            {/* هنا كنزيدو setActiveTab باش يخدم Navigation */}
             <Sidebar
                 activeTab={activeTab}
                 setActiveTab={(tab: string) => setActiveTab(tab)}
@@ -42,11 +48,21 @@ const LivreurDashboard: React.FC = () => {
                     activeTab={activeTab}
                     isMenuOpen={isMenuOpen}
                     setIsMenuOpen={setIsMenuOpen}
-                    user={userData} // هنا كنزيدو الـ user باش تبان السمية في الـ Navbar
+                    user={userData} // إرسال بيانات المستخدم لـ TopHeader لعرض الصورة والاسم
                 />
+
                 <section className="content-body">
-                    {activeTab === "dashboard" && <h1>Bienvenue {userData?.firstName || "Livreur"}</h1>}
-                    {/* هنا غتزيدي الكومبوننت ديال Mes Livraisons */}
+                    {activeTab === "dashboard" && (
+                        <div className="welcome-section">
+                            <h1>Bienvenue, {userData?.firstName || "Livreur"} ! 🚚</h1>
+                            <p>Prêt pour vos livraisons d'aujourd'hui ?</p>
+                        </div>
+                    )}
+
+                    {/* هنا تقدري تزيد المكونات الأخرى بحال MesLivraisons */}
+                    {activeTab === "livraisons" && (
+                        <div>{/* <MesLivraisons /> */}</div>
+                    )}
                 </section>
             </main>
         </div>

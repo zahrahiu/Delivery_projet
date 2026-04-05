@@ -63,35 +63,12 @@ public class SecurityConfig {
     // Cette configuration permet d'autoriser le Frontend Angular
     // (http://localhost:4200) à communiquer avec le backend Spring Boot.
     // Sans CORS, le navigateur bloque les requêtes pour des raisons de sécurité.
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
 
-        CorsConfiguration config = new CorsConfiguration();
-
-        // Origine autorisée (Frontend Angular)
-        config.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-
-        // Méthodes HTTP autorisées (GET, POST, PUT, DELETE, etc.)
-        config.setAllowedMethods(Arrays.asList("*"));
-
-        // Headers autorisés (Authorization est nécessaire pour JWT)
-        config.setAllowedHeaders(Arrays.asList("*"));
-
-        // Autoriser l'envoi du header Authorization (JWT)
-        config.setAllowCredentials(true);
-
-        // Appliquer cette configuration à toutes les routes de l'application
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
-        return source;
-    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 // Activation de CORS dans Spring Security
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .csrf(csrf -> csrf.disable())
 

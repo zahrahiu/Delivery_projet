@@ -1,211 +1,211 @@
-/* Container الأساسي للصفحة */
 .profile-page-wrapper {
-    padding: 1rem;
-    /* حيدي background-color و min-height إلا كانوا كيديرو مشكل مع الـ main-content */
+    padding: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%;
+    background-color: #f8fafc;
+    min-height: 90vh;
 }
 
-/* زر العودة */
-.back-btn {
-    align-self: flex-start;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: none;
-    border: 1px solid #d5e5e5;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    color: #5d6b6b;
-    font-weight: 500;
-    transition: 0.3s;
+.profile-header-actions {
+    width: 100%;
+    max-width: 800px;
     margin-bottom: 20px;
 }
 
-.back-btn:hover {
-    background-color: #d5e5e5;
-}
-
-/* بطاقة البروفيل */
 .profile-container {
     background: white;
     width: 100%;
-    max-width: 700px;
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    max-width: 800px;
+    border-radius: 24px;
+    padding: 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    border: 1px solid #eef2f6;
 }
 
-/* الهيدر ديال البروفيل */
+/* تعديل الـ Header ليصبح أفقي */
 .profile-card-header {
-    text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #f1f5f9;
 }
 
-.avatar-section {
-    position: relative;
-    display: inline-block;
-    margin-bottom: 15px;
-}
-
-.status-badge {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
-    background: white;
-    border-radius: 20px;
-    padding: 4px 10px;
-    font-size: 12px;
+.profile-header-main {
     display: flex;
     align-items: center;
-    gap: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    gap: 30px; /* المسافة بين الصورة والمعلومات */
+    text-align: left; /* نغير المحاذاة لليسار */
+}
+
+.user-primary-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* المعلومات تبدا من اليسار */
+    gap: 10px;
 }
 
 .profile-card-header h1 {
-    margin: 10px 0;
-    color: #5d6b6b;
-    font-size: 24px;
+    font-size: 2.2rem; /* كبرنا الخط شوية */
+    color: #1e293b;
+    margin: 0;
+    font-weight: 800;
 }
+
+.user-location-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-top: 5px;
+}
+
+/* تعديل حجم الصورة لتناسب التصميم الأفقي */
+.profile-avatar-img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 6px solid #fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* لضمان التناسق في الهواتف (يرجع عمودي) */
+@media (max-width: 640px) {
+    .profile-header-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+
+    .user-primary-info {
+        align-items: center;
+    }
+
+    .profile-card-header h1 {
+        font-size: 1.6rem;
+    }
+}
+
 
 .role-tag {
-    background-color: #f7cbca; /* اللون الوردي ديالك */
+    background-color: #f7cbca; /* الوردي المعتمد عندك */
     color: #5d6b6b;
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.profile-divider {
-    border: 0;
-    border-top: 1px solid #eee;
-    margin: 30px 0;
+    padding: 6px 18px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 /* شبكة المعلومات */
 .profile-info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 25px;
+    gap: 30px;
+    margin-top: 20px;
 }
 
 .info-item {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 15px;
+    padding: 15px;
+    background: #fdfdfd;
+    border-radius: 15px;
+    border: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
 }
 
-.info-item.full-width {
-    grid-column: 1 / -1;
+.info-item:hover {
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
 }
 
-.info-icon {
-    background-color: #fcfcfc;
-    padding: 12px;
+.info-icon-box {
+    width: 45px;
+    height: 45px;
+    background-color: #d5e5e5; /* المائي المعتمد عندك */
+    color: #5d6b6b;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #f0f0f0;
+    font-size: 1.2rem;
 }
 
 .info-text label {
-    display: block;
-    font-size: 12px;
-    color: #999;
-    margin-bottom: 4px;
+    font-size: 0.75rem;
+    color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 2px;
 }
 
 .info-text p {
+    font-size: 1rem;
+    color: #334155;
+    font-weight: 600;
     margin: 0;
-    font-size: 16px;
-    color: #333;
-    font-weight: 500;
 }
 
-/* التاغز ديال الصلاحيات */
-.tags-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
+.info-item.full-width {
+    grid-column: span 2;
 }
 
-.tag-badge {
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-}
-
-.tag-badge.role {
-    background-color: #d5e5e5; /* اللون المائي ديالك */
-    color: #5d6b6b;
-}
-
-.tag-badge.perm {
-    background-color: #eee;
-    color: #777;
-}
-
-/* الأزرار السفلية */
+/* الأزرار */
 .profile-footer-actions {
     margin-top: 40px;
-    text-align: center;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 30px;
+    display: flex;
+    justify-content: center;
 }
 
 .edit-profile-btn {
-    background-color: #5d6b6b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #1e293b;
     color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 10px;
+    padding: 14px 35px;
+    border-radius: 12px;
     font-weight: 600;
+    border: none;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.3s ease;
 }
 
 .edit-profile-btn:hover {
-    background-color: #4a5555;
-    transform: translateY(-2px);
+    background-color: #0f172a;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-/* Responsive */
-@media (max-width: 600px) {
+/* زر Retour */
+.back-btn {
+    border: 1px solid #e2e8f0;
+    background: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    color: #64748b;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+@media (max-width: 640px) {
     .profile-info-grid {
         grid-template-columns: 1fr;
     }
+    .profile-container {
+        padding: 30px 20px;
+    }
 }
-
-/* ستايل زر التعديل */
-.profile-footer-actions {
-    margin-top: 30px;
-    display: flex;
-    justify-content: center;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-}
-
-.edit-profile-btn {
-    background-color: #3b4e61; /* اللون الأساسي */
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.3s ease;
-}
-
-.edit-profile-btn:hover {
-    background-color: #203339;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-

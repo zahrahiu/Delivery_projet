@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { FaTruck, FaBoxOpen, FaClipboardList, FaClock, FaCheckCircle } from "react-icons/fa";
+import { FaTruck, FaBoxOpen, FaClock, FaCheckCircle } from "react-icons/fa";
 import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
 import ColisManagement from "./ ColisManagement";
 import LivreurList from "./LivreurList";
 import AddColisForm from "./AddColisForm";
-import DeliveryMap from "./DeliveryMap"; // تأكدي أن الملف موجود
+import DeliveryMap from "./DeliveryMap";
 
 const DispatcherDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [userData, setUserData] = useState<any>(null);
-
-    // 1. تعريف الـ State ديال الطرود باش تقراها الخريطة والرسوم المبيانية
     const [parcels, setParcels] = useState<any[]>([]);
 
     const [stats, setStats] = useState({
@@ -24,35 +22,34 @@ const DispatcherDashboard: React.FC = () => {
         delivered: 0
     });
 
-    const API_PARCELS = "http://localhost:8082/api/parcels";
+    // --- التعديل: استخدام الـ Gateway لجميع الخدمات ---
+    const GATEWAY_URL = "http://localhost:8888";
+    const API_PARCELS = `${GATEWAY_URL}/parcel-service/api/parcels`;
+    const API_USER_DETAILS = `${GATEWAY_URL}/users-service/api/profiles/details`;
 
     const fetchData = async () => {
         try {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            // جلب معلومات البروفايل
             const payload = JSON.parse(atob(token.split('.')[1]));
-            const userRes = await axios.get(`http://localhost:8081/api/profiles/details/${payload.userId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const config = { headers: { Authorization: `Bearer ${token}` } };
+
+            // 1. جلب معلومات البروفايل عبر الـ Gateway
+            const userRes = await axios.get(`${API_USER_DETAILS}/${payload.userId}`, config);
             setUserData(userRes.data);
 
-            // جلب الطرود من الـ Microservice
-            const parcelsRes = await axios.get(API_PARCELS, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
+            // 2. جلب الطرود عبر الـ Gateway
+            const parcelsRes = await axios.get(API_PARCELS, config);
             const allParcels = parcelsRes.data;
 
-            // 2. حفظ الطرود في الـ State (هذا هو الحل للخطأ اللي طلع ليك)
             setParcels(allParcels);
 
-            // تحديث الإحصائيات
+            // تحديث الإحصائيات بناءً على البيانات القادمة من الـ Microservice
             setStats({
                 total: allParcels.length,
                 pending: allParcels.filter((p: any) => p.status === "PENDING").length,
-                assigned: allParcels.filter((p: any) => p.status === "ASSIGNED" || p.status === "IN_TRANSIT").length,
+                assigned: allParcels.filter((p: any) => ["ASSIGNED", "IN_TRANSIT"].includes(p.status)).length,
                 delivered: allParcels.filter((p: any) => p.status === "DELIVERED").length
             });
 
@@ -72,8 +69,8 @@ const DispatcherDashboard: React.FC = () => {
     ];
 
     const dailyActivity = [
-        { time: '08:00', colis: 5 },
-        { time: '12:00', colis: stats.total > 0 ? stats.total : 10 },
+        { time: '08:00', colis: Math.floor(stats.total * 0.2) },
+        { time: '12:00', colis: Math.floor(stats.total * 0.6) },
         { time: '18:00', colis: stats.delivered },
     ];
 
@@ -94,9 +91,10 @@ const DispatcherDashboard: React.FC = () => {
                         <div className="dashboard-wrapper">
                             <div className="welcome-section">
                                 <h3>Bonjour, {userData?.firstName || "Dispatcher"} 👋</h3>
+                                <p className="text-muted">Voici un aperçu de l'activité de livraison aujourd'hui.</p>
                             </div>
 
-                            {/* Cards Stats */}
+                            {/* Stats Cards */}
                             <div className="stats-grid-top">
                                 <div className="stat-item orange-light">
                                     <div className="icon-circle"><FaClock /></div>
@@ -128,7 +126,7 @@ const DispatcherDashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Charts & Map Section */}
+                            {/* Charts & Map */}
                             <div className="charts-main-section">
                                 <div className="chart-card area-card">
                                     <h3>Flux de colis (Aujourd'hui) 📈</h3>
@@ -160,15 +158,17 @@ const DispatcherDashboard: React.FC = () => {
                                     </ResponsiveContainer>
                                     <div className="pie-labels">
                                         {statusPieData.map(s => (
-                                            <div key={s.name}>
-                                                <span style={{background: s.color}}></span> {s.name} ({s.value})
+                                            <div key={s.name} className="label-item">
+                                                <span style={{background: s.color, width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block', marginRight: '5px'}}></span>
+                                                {s.name} ({s.value})
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* الخريطة تأخذ الآن الـ parcels من الـ State */}
-                                <div className="full-width-map" style={{ gridColumn: "span 2", marginTop: '20px' }}>
+                                {/* الخريطة تأخذ الآن الـ parcels من الـ State الحقيقي */}
+                                <div className="full-width-map" style={{ gridColumn: "span 2", marginTop: '20px', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                                    <h3 style={{ padding: '15px', background: '#fff', margin: 0, fontSize: '1rem' }}>📍 Suivi en temps réel des colis</h3>
                                     <DeliveryMap parcels={parcels} />
                                 </div>
                             </div>

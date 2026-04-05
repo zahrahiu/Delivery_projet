@@ -13,32 +13,42 @@ const Login: React.FC = () => {
 
     const handleLogin = async () => {
         try {
-            const res = await axios.post("http://localhost:8080/v1/users/login", {
+            const res = await axios.post("http://localhost:8888/service-security/v1/users/login", {
                 email,
                 password
             });
 
             const { accessToken } = res.data;
 
-            // تخزين token
+            // تخزين الـ token
             localStorage.setItem("token", accessToken);
 
-            // decode JWT باش نعرفو role
-            const payload = JSON.parse(atob(accessToken.split(".")[1]));
-            const roles = payload.roles;
+            // Decode JWT باش نعرفو الـ roles
+            const base64Url = accessToken.split(".")[1];
+            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+            const payload = JSON.parse(window.atob(base64));
 
-            if (roles.includes("ADMIN")) {
+            const userRoles = payload.authorities || payload.roles || [];
+
+            const rolesStr = JSON.stringify(userRoles).toUpperCase();
+
+            if (rolesStr.includes("ADMIN")) {
                 navigate("/admin");
-            } else if (roles.includes("DISPATCHER")) {
+            } else if (rolesStr.includes("DISPATCHER")) {
                 navigate("/dispatcher");
-            } else if (roles.includes("LIVREUR")) {
+            } else if (rolesStr.includes("LIVREUR")) {
                 navigate("/livreur");
             } else {
                 navigate("/client");
             }
+
         } catch (err: any) {
-            alert("Échec de la connexion ! Vérifiez votre email ou mot de passe.");
-            console.error(err);
+            console.error("Login Error:", err);
+            if (err.response) {
+                alert(`Erreur: ${err.response.data.message || "Identifiants incorrects"}`);
+            } else {
+                alert("Impossible de contacter le serveur. Vérifiez le Gateway (8888).");
+            }
         }
     };
 
@@ -66,7 +76,7 @@ const Login: React.FC = () => {
                     <div className="input-group">
                         <FaUser className="icon" />
                         <input
-                            type="text"
+                            type="email"
                             placeholder="Votre Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -108,13 +118,9 @@ const Login: React.FC = () => {
             </div>
 
             {/* Circles Background */}
-            <div className="circle circle-1"></div>
-            <div className="circle circle-2"></div>
-            <div className="circle circle-3"></div>
-            <div className="circle circle-4"></div>
-            <div className="circle circle-9"></div>
-            <div className="circle circle-12"></div>
-            <div className="circle circle-20"></div>
+            {[1, 2, 3, 4, 9, 12, 20].map((num) => (
+                <div key={num} className={`circle circle-${num}`}></div>
+            ))}
         </div>
     );
 };

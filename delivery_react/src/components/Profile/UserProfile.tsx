@@ -5,8 +5,8 @@ import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
 import "./UserProfile.css";
 import {
-    FaUserCircle, FaEnvelope, FaIdBadge, FaShieldAlt, FaArrowLeft,
-    FaCheckCircle, FaPhone, FaMapMarkerAlt, FaIdCard, FaTruck, FaFileAlt
+    FaUserCircle, FaEnvelope, FaArrowLeft,
+    FaPhone, FaMapMarkerAlt, FaIdCard, FaTruck, FaFileAlt, FaUserEdit
 } from 'react-icons/fa';
 
 const UserProfile: React.FC = () => {
@@ -16,42 +16,32 @@ const UserProfile: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("profile");
 
-    const handleBack = () => {
-        // كنشوفو الـ role ديال المستخدم (اللي ديجا عندك في الـ userData أو formData)
-        const role = userData?.role || "CLIENT"; // default هي CLIENT
+    const GATEWAY_URL = "http://localhost:8888";
+    const API_URL = `${GATEWAY_URL}/users-service/api/profiles/details`;
+    const IMAGE_BASE_URL = `${GATEWAY_URL}/users-service/uploads`;
 
+    const handleBack = () => {
+        const role = userData?.role || "CLIENT";
         switch (role) {
-            case "ADMIN":
-                navigate('/admin');
-                break;
-            case "DISPATCHER":
-                navigate('/dispatcher');
-                break;
-            case "LIVREUR":
-                navigate('/livreur');
-                break;
-            case "CLIENT":
-            default:
-                navigate('/client');
-                break;
+            case "ADMIN": navigate('/admin'); break;
+            case "DISPATCHER": navigate('/dispatcher'); break;
+            case "LIVREUR": navigate('/livreur'); break;
+            case "CLIENT": default: navigate('/client'); break;
         }
     };
+
     useEffect(() => {
         const fetchFullProfile = async () => {
             try {
                 const token = localStorage.getItem("token");
                 if (!token) return navigate('/login');
-
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                const userId = payload.userId;
-
-                // العيطة للـ Backend 8081
-                const response = await axios.get(`http://localhost:8081/api/profiles/details/${userId}`, {
+                const response = await axios.get(`${API_URL}/${payload.userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setUserData(response.data);
             } catch (error) {
-                console.error("خطأ في جلب البيانات:", error);
+                console.error("Erreur:", error);
             } finally {
                 setLoading(false);
             }
@@ -59,84 +49,92 @@ const UserProfile: React.FC = () => {
         fetchFullProfile();
     }, [navigate]);
 
-    if (loading) return <div className="loading">Chargement des données...</div>;
-
-    // إذا وقع خطأ وما جابش الداتا
-    if (!userData) return <div className="loading">Erreur de chargement du profil.</div>;
+    if (loading) return <div className="loading-screen">Chargement du profil...</div>;
+    if (!userData) return <div className="error-screen">Impossible de charger le profil.</div>;
 
     const userRole = userData.role || "USER";
 
     return (
         <div className="admin-container" onClick={() => setIsMenuOpen(false)}>
-            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role="CLIENT" />
+            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role={userRole} />
 
             <main className="main-content">
-                <TopHeader
-                    activeTab={activeTab}
-                    isMenuOpen={isMenuOpen}
-                    setIsMenuOpen={setIsMenuOpen}
-                    user={userData} // هنا كنزيدو الـ user
-                />
-                <section className="content-body">
-                    <div className="profile-page-wrapper">
+                <TopHeader activeTab="Mon Profil" isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} user={userData} />
+
+                <section className="profile-page-wrapper">
+                    <div className="profile-header-actions">
                         <button className="back-btn" onClick={handleBack}>
-                            <FaArrowLeft /> Retour au Dashboard
+                            <FaArrowLeft /> Retour
                         </button>
-                        <div className="profile-container">
-                            <div className="profile-card-header">
+                    </div>
+
+                    <div className="profile-container">
+
+                        <div className="profile-card-header">
+                            <div className="profile-header-main">
                                 <div className="avatar-section">
                                     {userData.profileImageUrl ? (
                                         <img
-                                            src={`http://localhost:8081/uploads/${userData.profileImageUrl}`}
+                                            src={`${IMAGE_BASE_URL}/${userData.profileImageUrl}`}
                                             alt="Profile"
-                                            onLoad={() => console.log("✅ Image loaded successfully")}
-                                            onError={(e) => {
-                                                console.error("❌ Failed to load image:", e.currentTarget.src);
-                                                console.log("Image name from DB:", userData.profileImageUrl);
-                                                e.currentTarget.src = `http://localhost:8081/uploads/${userData.profileImageUrl}`;
-                                            }}
-                                            style={{
-                                                width: '120px',
-                                                height: '120px',
-                                                borderRadius: '50%',
-                                                objectFit: 'cover',
-                                                border: '4px solid #d5e5e5'
-                                            }}
+                                            className="profile-avatar-img"
                                         />
                                     ) : (
-                                        <FaUserCircle size={120} color="#5d6b6b" />
+                                        <FaUserCircle size={120} className="default-avatar-icon" />
                                     )}
                                 </div>
-                                <h1>{userData.firstName} {userData.lastName}</h1>
-                                <span className="role-tag">{userRole}</span>
+
+                                <div className="user-primary-info">
+                                    <h1>{userData.firstName} {userData.lastName}</h1>
+                                    <span className="role-tag">{userRole}</span>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="profile-info-grid">
+                            <div className="info-item">
+                                <div className="info-icon-box"><FaEnvelope /></div>
+                                <div className="info-text"><label>Email</label><p>{userData.email}</p></div>
+                            </div>
+                            <div className="info-item">
+                                <div className="info-icon-box"><FaPhone /></div>
+                                <div className="info-text"><label>Téléphone</label><p>{userData.phone || "Non défini"}</p></div>
+                            </div>
+                            <div className="info-item">
+                                <div className="info-icon-box"><FaIdCard /></div>
+                                <div className="info-text"><label>CNI</label><p>{userData.cni || "Non défini"}</p></div>
+                            </div>
+                            <div className="info-item">
+                                <div className="info-icon-box"><FaMapMarkerAlt /></div>
+                                <div className="info-text"><label>Zone</label><p>{userData.zone || "Non défini"}</p></div>
                             </div>
 
-                            <div className="profile-info-grid">
-                                <div className="info-item"><FaEnvelope color="#f7cbca" /><div className="info-text"><label>Email</label><p>{userData.email}</p></div></div>
-                                <div className="info-item"><FaPhone color="#d5e5e5" /><div className="info-text"><label>Téléphone</label><p>{userData.phone || "Non défini"}</p></div></div>
-                                <div className="info-item"><FaIdCard color="#5d6b6b" /><div className="info-text"><label>CNI</label><p>{userData.cni || "Non défini"}</p></div></div>
-                                <div className="info-item"><FaMapMarkerAlt color="#f7cbca" /><div className="info-text"><label>Zone</label><p>{userData.zone || "Non défini"}</p></div></div>
+                            {(userRole === "CLIENT" || userRole === "DISPATCHER") && (
+                                <div className="info-item full-width">
+                                    <div className="info-icon-box"><FaMapMarkerAlt /></div>
+                                    <div className="info-text"><label>Adresse Complète</label><p>{userData.address || "Non défini"}</p></div>
+                                </div>
+                            )}
 
-                                {(userRole === "CLIENT" || userRole === "DISPATCHER") && (
-                                    <div className="info-item full-width"><FaMapMarkerAlt /><div className="info-text"><label>Adresse</label><p>{userData.address || "Non défini"}</p></div></div>
-                                )}
+                            {userRole === "LIVREUR" && (
+                                <>
+                                    <div className="info-item">
+                                        <div className="info-icon-box"><FaTruck /></div>
+                                        <div className="info-text"><label>Véhicule</label><p>{userData.vehicleType || "Non défini"}</p></div>
+                                    </div>
+                                    <div className="info-item">
+                                        <div className="info-icon-box"><FaFileAlt /></div>
+                                        <div className="info-text"><label>Matricule</label><p>{userData.matricule || "Non défini"}</p></div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
 
-                                {userRole === "LIVREUR" && (
-                                    <>
-                                        <div className="info-item"><FaTruck /><div className="info-text"><label>Véhicule</label><p>{userData.vehicleType || "Non défini"}</p></div></div>
-                                        <div className="info-item"><FaFileAlt /><div className="info-text"><label>Matricule</label><p>{userData.matricule || "Non défini"}</p></div></div>
-                                        <div className="info-item"><FaIdCard /><div className="info-text"><label>N° Permis</label><p>{userData.permisNumber || "Non défini"}</p></div></div>
-                                    </>
-                                )}
-                            </div>
-                            <div className="profile-footer-actions">
-                                <button
-                                    className="edit-profile-btn"
-                                    onClick={() => navigate('/edit-profile', { state: { userData } })}
-                                >
-                                    Modifier mes informations
-                                </button>
-                            </div>
+                        <div className="profile-footer-actions">
+                            <button className="edit-profile-btn" onClick={() => navigate('/edit-profile', { state: { userData } })}>
+                                <FaUserEdit /> Modifier mes informations
+                            </button>
                         </div>
                     </div>
                 </section>

@@ -1,29 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from "react";
 import axios from "axios";
 import Swal from 'sweetalert2';
-import { FaPlus, FaEdit, FaTrash, FaBoxOpen, FaTruck, FaCheckCircle, FaSearch } from "react-icons/fa";
-import UpdateColisForm from "./UpdateColisForm"; // تأكدي من استيراد المكون الجديد
+import {FaPlus, FaEdit, FaTrash, FaBoxOpen, FaTruck, FaCheckCircle, FaSearch} from "react-icons/fa";
+import UpdateColisForm from "./UpdateColisForm";
 import "./ColisManagement.css";
 
 interface ColisProps {
     onAddClick?: () => void;
 }
 
-const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
+const ColisManagement: React.FC<ColisProps> = ({onAddClick}) => {
     const [parcels, setParcels] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [selectedParcel, setSelectedParcel] = useState<any>(null);
     const [showLivreurModal, setShowLivreurModal] = useState(false);
-    const [livreurs, setLivreurs] = useState<any[]>([]); // باش نخزنو الليفرور
-    const API_URL = "http://localhost:8082/api/parcels";
+    const [livreurs, setLivreurs] = useState<any[]>([]);
+
+    const API_URL = "http://localhost:8888/parcel-service/api/parcels";
     const token = localStorage.getItem("token");
 
-    // دالة جلب البيانات
     const fetchParcels = async () => {
         try {
             const res = await axios.get(API_URL, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: {Authorization: `Bearer ${token}`}
             });
             setParcels(res.data);
         } catch (err) {
@@ -35,7 +35,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
         fetchParcels();
     }, []);
 
-    // دالة الحذف
     const handleDelete = async (id: number) => {
         Swal.fire({
             title: 'Supprimer ce colis ?',
@@ -50,7 +49,7 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
             if (result.isConfirmed) {
                 try {
                     await axios.delete(`${API_URL}/${id}`, {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: {Authorization: `Bearer ${token}`}
                     });
                     setParcels(parcels.filter(p => p.id !== id));
                     Swal.fire('Supprimé !', 'Le colis a été supprimé.', 'success');
@@ -68,10 +67,9 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
 
     const fetchLivreurs = async () => {
         try {
-            const res = await axios.get("http://localhost:8081/api/profiles", {
-                headers: { Authorization: `Bearer ${token}` }
+            const res = await axios.get("http://localhost:8888/users-service/api/profiles", {
+                headers: {Authorization: `Bearer ${token}`}
             });
-            // كنصفيو غير اللي عندهم دور LIVREUR
             setLivreurs(res.data.filter((u: any) => u.role === "LIVREUR"));
         } catch (err) {
             console.error("Error fetching livreurs", err);
@@ -82,14 +80,13 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
         try {
             const token = localStorage.getItem("token");
 
-            // 1. استعملي بورت 3001 الخاص بـ Delivery Service
-            // 2. استعملي trackingNumber في الـ URL
-            const url = `http://localhost:3001/deliveries/${parcel.trackingNumber}/assign`;
+            // التعديل هنا: استخدام Gateway (8888) مع اسم الخدمة delivery-service
+            const url = `http://localhost:8888/delivery-service/deliveries/${parcel.trackingNumber}/assign`;
 
             await axios.post(url,
-                { livreurId: livreurId }, // الـ Body الذي يتوقعه Node.js
+                {livreurId: livreurId},
                 {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: {Authorization: `Bearer ${token}`}
                 }
             );
             await updateStatus(parcel, "ASSIGNED");
@@ -105,11 +102,10 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
 
     useEffect(() => {
         fetchParcels();
-        fetchLivreurs(); // جيبيهم ملي يتحل المكون
+        fetchLivreurs();
     }, []);
 
     const updateStatus = async (parcel: any, newStatus: string) => {
-        // ⚠️ تأكدي أن id كاين قبل ما تبداي
         if (!parcel || !parcel.id) {
             console.error("ID du colis est introuvable !");
             return;
@@ -118,7 +114,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
         try {
             const token = localStorage.getItem("token");
 
-            // صيفطي كاع البيانات اللي كيتسناها الـ ParcelRequestDTO
             const payload = {
                 weight: parcel.weight,
                 deliveryAddress: parcel.deliveryAddress,
@@ -126,17 +121,15 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                 senderId: parcel.senderId,
                 senderName: parcel.senderName,
                 senderPhone: parcel.senderPhone,
-                clientEmail: parcel.clientEmail || parcel.senderEmail, // تأكدي من السمية
+                clientEmail: parcel.clientEmail || parcel.senderEmail,
                 status: newStatus
             };
 
-            // استعمال الـ PUT اللي ديجا جربناه وخدام
             await axios.put(`${API_URL}/${parcel.id}`, payload, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: {Authorization: `Bearer ${token}`}
             });
 
-            // تحديث الـ State باش يبان التغيير فالحين
-            setParcels(prev => prev.map(p => p.id === parcel.id ? { ...p, status: newStatus } : p));
+            setParcels(prev => prev.map(p => p.id === parcel.id ? {...p, status: newStatus} : p));
 
             Swal.fire({
                 icon: 'success',
@@ -152,7 +145,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
         }
     };
 
-    // --- المنطق الخاص بالعرض الشرطي ---
     if (isEditing && selectedParcel) {
         return (
             <UpdateColisForm
@@ -164,7 +156,7 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                 onUpdateSuccess={() => {
                     setIsEditing(false);
                     setSelectedParcel(null);
-                    fetchParcels(); // تحديث الجدول بعد النجاح
+                    fetchParcels();
                 }}
             />
         );
@@ -177,28 +169,27 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                     <h2>📦 Gestion des Colis</h2>
                 </div>
                 <button className="btn-add" onClick={onAddClick}>
-                    <FaPlus /> Nouveau Colis
+                    <FaPlus/> Nouveau Colis
                 </button>
             </div>
 
-            {/* الإحصائيات */}
             <div className="stats-grid">
                 <div className="stat-card">
-                    <div className="stat-icon pending"><FaBoxOpen /></div>
+                    <div className="stat-icon pending"><FaBoxOpen/></div>
                     <div className="stat-info">
                         <h3>{parcels.filter(p => p.status === 'PENDING').length}</h3>
                         <p>En attente</p>
                     </div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-icon transit"><FaTruck /></div>
+                    <div className="stat-icon transit"><FaTruck/></div>
                     <div className="stat-info">
                         <h3>{parcels.filter(p => p.status === 'IN_TRANSIT' || p.status === 'ASSIGNED').length}</h3>
                         <p>En cours / Assignés</p>
                     </div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-icon delivered"><FaCheckCircle /></div>
+                    <div className="stat-icon delivered"><FaCheckCircle/></div>
                     <div className="stat-info">
                         <h3>{parcels.filter(p => p.status === 'DELIVERED').length}</h3>
                         <p>Livrés</p>
@@ -206,9 +197,8 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                 </div>
             </div>
 
-            {/* شريط البحث */}
             <div className="search-bar-container shadow-sm">
-                <FaSearch className="search-icon" />
+                <FaSearch className="search-icon"/>
                 <input
                     placeholder="Rechercher par code de suivi ou expéditeur..."
                     value={searchTerm}
@@ -216,9 +206,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                 />
             </div>
 
-
-
-            {/* الجدول */}
             <div className="table-container shadow-sm">
                 <table>
                     <thead>
@@ -243,7 +230,7 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                                     <select
                                         className={`status-select-mini ${p.status}`}
                                         value={p.status}
-                                        onChange={(e) => updateStatus(p, e.target.value)} // صيفطي الكوليس كامل p
+                                        onChange={(e) => updateStatus(p, e.target.value)}
                                     >
                                         <option value="PENDING">⌛ En attente</option>
                                         <option value="ASSIGNED">👤 Assigné</option>
@@ -254,10 +241,9 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                                     </select>
                                 </td>
                                 <td className="text-center">
-
                                     <FaTruck
                                         className="assign-icon"
-                                        style={{ color: '#27ae60', cursor: 'pointer', marginRight: '10px' }}
+                                        style={{color: '#27ae60', cursor: 'pointer', marginRight: '10px'}}
                                         title="Assigner un livreur"
                                         onClick={() => {
                                             setSelectedParcel(p);
@@ -295,21 +281,33 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
                             <p>Colis: {selectedParcel?.trackingNumber || selectedParcel?.id}</p>
                             <div className="livreurs-list-mini">
                                 {livreurs.map(l => (
-                                    <div key={l.userId} className="livreur-item-select" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', padding: '5px', borderBottom: '1px solid #eee' }}>
+                                    <div key={l.userId} className="livreur-item-select" style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '10px',
+                                        padding: '5px',
+                                        borderBottom: '1px solid #eee'
+                                    }}>
                                         <span>{l.firstName} {l.lastName}</span>
-                                        {/* هنا كان الخطأ: الـ button ما كانش مسدود مزيان والـ div كانت ناقصة */}
-                                        {/* داخل المودال عند زر "Choisir" */}
                                         <button
                                             className="btn-select"
-                                            onClick={() => handleAssignLivreur(selectedParcel, l.userId)} // مرري الكائن كاملاً
-                                            style={{ backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '5px 10px' }}
+                                            onClick={() => handleAssignLivreur(selectedParcel, l.userId)}
+                                            style={{
+                                                backgroundColor: '#27ae60',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '4px',
+                                                cursor: 'pointer',
+                                                padding: '5px 10px'
+                                            }}
                                         >
                                             Choisir
                                         </button>
                                     </div>
                                 ))}
                             </div>
-                            <button className="btn-close" onClick={() => setShowLivreurModal(false)} style={{ marginTop: '15px' }}>
+                            <button className="btn-close" onClick={() => setShowLivreurModal(false)}
+                                    style={{marginTop: '15px'}}>
                                 Fermer
                             </button>
                         </div>
@@ -318,8 +316,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick }) => {
             </div>
         </div>
     );
-
-
 };
 
 export default ColisManagement;

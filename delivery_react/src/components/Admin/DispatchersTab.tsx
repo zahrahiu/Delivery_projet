@@ -49,8 +49,12 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
 
     const [formData, setFormData] = useState(initialForm);
 
-    const API_URL = "http://localhost:8081/api/profiles";
-    const getAuthHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
+    // الربط عبر الـ Gateway
+    const API_URL = "http://localhost:8888/users-service/api/profiles";
+
+    const getAuthHeader = () => ({
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+    });
 
     const fetchDispatchers = async () => {
         try {
@@ -99,35 +103,34 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isEditing && formData.password !== formData.confirmPassword) {
+            alert("Les mots de passe ne correspondent pas !");
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const token = localStorage.getItem("token");
+            // صيفطي JSON عادي باش الـ @RequestBody في Java يفهمو
+            const { confirmPassword, ...payload } = formData;
 
             if (isEditing) {
-                const dataToSend = new FormData();
-
-                Object.entries(formData).forEach(([key, value]) => {
-                    if (value !== "" && value !== null) {
-                        dataToSend.append(key, value as string);
-                    }
-                });
-
-                await axios.put(`${API_URL}/${formData.userId}`, dataToSend, {
+                await axios.put(`${API_URL}/${formData.userId}`, payload, {
                     headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-                alert("Modifié ✅");
-            } else {
-                const { confirmPassword, userId, ...payload } = formData;
-                await axios.post(API_URL, payload, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
+                        ...getAuthHeader(),
                         'Content-Type': 'application/json'
                     }
                 });
-                alert("Créé ✅");
+                alert("Dispatcher modifié ✅");
+            } else {
+                const { userId, ...createPayload } = payload;
+                await axios.post(API_URL, createPayload, {
+                    headers: {
+                        ...getAuthHeader(),
+                        'Content-Type': 'application/json'
+                    }
+                });
+                alert("Dispatcher créé ✅");
             }
             cancelAction();
             fetchDispatchers();
@@ -250,8 +253,8 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
             )}
 
             {showDetails && selectedDispatcher && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
+                <div className="modal-overlay" onClick={() => setShowDetails(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3>Détails du Dispatcher</h3>
                             <FaTimes onClick={() => setShowDetails(false)} style={{ cursor: 'pointer' }} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaUser, FaPhone, FaMapMarkerAlt, FaMotorcycle, FaSearch, FaUserCircle } from "react-icons/fa";
+import { FaPhone, FaMapMarkerAlt, FaMotorcycle, FaSearch, FaUserCircle } from "react-icons/fa";
 import "./LivreurList.css";
 
 const LivreurList: React.FC = () => {
@@ -8,7 +8,10 @@ const LivreurList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
 
-    const API_URL = "http://localhost:8081/api/profiles";
+    // --- الإعدادات الجديدة عبر الـ Gateway ---
+    const GATEWAY_URL = "http://localhost:8888";
+    const API_URL = `${GATEWAY_URL}/users-service/api/profiles`;
+    const IMAGE_BASE_URL = `${GATEWAY_URL}/users-service/uploads`;
 
     const fetchLivreurs = async () => {
         try {
@@ -17,6 +20,7 @@ const LivreurList: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            // تصفية المستخدمين الذين لديهم دور LIVREUR
             const filtered = response.data.filter((u: any) => u.role === "LIVREUR");
             setLivreurs(filtered);
             setLoading(false);
@@ -54,7 +58,7 @@ const LivreurList: React.FC = () => {
             </div>
 
             {loading ? (
-                <div className="loading-state">Chargement...</div>
+                <div className="loading-state">Chargement de la flotte...</div>
             ) : (
                 <div className="livreurs-grid">
                     {filteredLivreurs.map((l) => (
@@ -63,14 +67,16 @@ const LivreurList: React.FC = () => {
                                 <div className="avatar-section-small">
                                     {l.profileImageUrl ? (
                                         <img
-                                            src={`http://localhost:8081/uploads/${l.profileImageUrl}`}
-                                            alt="Livreur"
+                                            src={`${IMAGE_BASE_URL}/${l.profileImageUrl}`}
+                                            alt={`${l.firstName} ${l.lastName}`}
                                             className="livreur-img-circle"
                                             onError={(e) => {
-                                                e.currentTarget.onerror = null;
-                                                // إلا وقع خطأ كنرجعو للأيقونة الافتراضية
+                                                // في حالة فشل التحميل عبر الـ Gateway، نظهر الأيقونة الافتراضية
                                                 e.currentTarget.style.display = 'none';
-                                                e.currentTarget.parentElement?.classList.add('fallback-avatar');
+                                                const parent = e.currentTarget.parentElement;
+                                                if (parent) {
+                                                    parent.classList.add('fallback-avatar');
+                                                }
                                             }}
                                         />
                                     ) : (
@@ -101,6 +107,10 @@ const LivreurList: React.FC = () => {
                             </div>
                         </div>
                     ))}
+
+                    {!loading && filteredLivreurs.length === 0 && (
+                        <div className="no-results">Aucun livreur trouvé.</div>
+                    )}
                 </div>
             )}
         </div>

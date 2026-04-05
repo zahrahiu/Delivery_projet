@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
     FaEdit, FaTrash, FaArrowLeft, FaSpinner,
-    FaEye, FaTimes, FaChevronLeft, FaChevronRight, FaPlus,
-    FaMotorcycle, FaCar, FaTruck
+    FaEye, FaTimes, FaChevronLeft, FaChevronRight,
+    FaMotorcycle, FaCar, FaTruck, FaUser
 } from "react-icons/fa";
 
 interface Livreur {
@@ -19,7 +19,7 @@ interface Props {
 
 const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
     const [livreurs, setLivreurs] = useState<Livreur[]>([]);
-    const [zones, setZones] = useState<any[]>([]); // حالة جديدة لتخزين الزونات
+    const [zones, setZones] = useState<any[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -37,10 +37,13 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
 
     const [formData, setFormData] = useState(initialForm);
 
-    const API_URL = "http://localhost:8081/api/profiles";
-    const TARIFS_API = "http://localhost:5005/api/tarifs"; // API ديال الزونات
+    // الروابط الجديدة عبر الـ Gateway (البور 8888)
+    const API_URL = "http://localhost:8888/users-service/api/profiles";
+    const TARIFS_API = "http://localhost:8888/tarif-zone-service/api/tarifs";
 
-    const getAuthHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
+    const getAuthHeader = () => ({
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+    });
 
     const fetchLivreurs = async () => {
         try {
@@ -51,7 +54,6 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
         } catch (error) { console.error("Fetch Error:", error); }
     };
 
-    // جلب الزونات من الباكيند
     const fetchZones = async () => {
         try {
             const res = await axios.get(TARIFS_API, { headers: getAuthHeader() });
@@ -73,45 +75,34 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
         }
     };
 
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = livreurs.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(livreurs.length / itemsPerPage);
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isEditing && formData.password !== formData.confirmPassword) {
+            alert("Les mots de passe ne correspondent pas !");
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const token = localStorage.getItem("token");
+            // صيفطي JSON عادي باش الـ Gateway والـ Microservice لداخل يفهموه بسهولة
+            const { confirmPassword, ...payload } = formData;
 
             if (isEditing) {
-                const dataToSend = new FormData();
-                Object.entries(formData).forEach(([key, value]) => {
-                    if (value !== "" && value !== null) {
-                        dataToSend.append(key, value as string);
-                    }
+                await axios.put(`${API_URL}/${formData.userId}`, payload, {
+                    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }
                 });
-
-                await axios.put(`${API_URL}/${formData.userId}`, dataToSend, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-                alert("Livreur modifié avec succès ✅");
+                alert("Livreur modifié avec success ✅");
             } else {
-                const { confirmPassword, userId, ...payload } = formData;
-                await axios.post(API_URL, payload, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
+                const { userId, ...createPayload } = payload;
+                await axios.post(API_URL, createPayload, {
+                    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }
                 });
-                alert("Livreur ajouté avec succès ✅");
+                alert("Livreur ajouté avec success ✅");
             }
 
             setIsFormOpen(false);
@@ -119,7 +110,7 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
             fetchLivreurs();
         } catch (error: any) {
             console.error("Error details:", error.response?.data);
-            alert("Erreur lors de l'enregistrement: " + (error.response?.data?.message || "Vérifiez la console"));
+            alert("Erreur: " + (error.response?.data?.message || "Vérifiez la console"));
         } finally {
             setIsLoading(false);
         }
@@ -130,9 +121,14 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
             try {
                 await axios.delete(`${API_URL}/${id}`, { headers: getAuthHeader() });
                 fetchLivreurs();
-            } catch (error) { alert("Erreur."); }
+            } catch (error) { alert("Erreur lors de la suppression."); }
         }
     };
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = livreurs.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(livreurs.length / itemsPerPage);
 
     return (
         <div className="management-section">
@@ -141,21 +137,24 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                     <div className="header-flex">
                         <h2 className="section-title">Flotte de Livreurs ({livreurs.length})</h2>
                         <button className="btn-add" onClick={() => { setIsEditing(false); setFormData(initialForm); setIsFormOpen(true); }}>
-                            + Livreur
+                            + Nouveau Livreur
                         </button>
                     </div>
                     <div className="table-container">
                         <table className="custom-table">
                             <thead>
-                            <tr><th>Nom Complet</th><th>Contact</th><th>CNI</th><th>Zone</th><th>Véحicule</th><th>Actions</th></tr>
+                            <tr><th>Livreur</th><th>Contact</th><th>CNI</th><th>Zone</th><th>Véhicule</th><th>Actions</th></tr>
                             </thead>
                             <tbody>
                             {currentItems.map((l) => (
                                 <tr key={l.userId}>
-                                    <td>{l.firstName} {l.lastName}</td>
+                                    <td style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                        <FaUser style={{color:'#999'}} />
+                                        <span>{l.firstName} {l.lastName}</span>
+                                    </td>
                                     <td>{l.phone} <br/><small style={{color:'#888'}}>{l.email}</small></td>
                                     <td>{l.cni}</td>
-                                    <td><span className="zone-badge">Zone {l.zone}</span></td>
+                                    <td><span className="zone-badge">{l.zone}</span></td>
                                     <td><span style={{display:'flex', alignItems:'center', gap:'5px'}}>{getVehicleIcon(l.vehicleType)} {l.vehicleType}</span></td>
                                     <td className="action-buttons">
                                         <FaEye className="icon-view" onClick={() => { setSelectedLivreur(l); setShowDetails(true); }} />
@@ -192,16 +191,17 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                                 <div className="input-block"><label>CNI</label><input type="text" name="cni" value={formData.cni} onChange={handleInputChange} /></div>
                             </div>
                             <div className="input-block"><label>Email</label><input type="email" name="email" required value={formData.email} onChange={handleInputChange} disabled={isEditing} /></div>
-                            <div className="form-section-header">Logistique</div>
+
+                            <div className="form-section-header" style={{marginTop:'20px', fontWeight:'bold', borderBottom:'1px solid #eee'}}>Logistique</div>
+
                             <div className="form-row-grid">
-                                {/* هنا التعديل: تحويل الـ Input لـ Select */}
                                 <div className="input-block">
                                     <label>Zone</label>
                                     <select name="zone" required value={formData.zone} onChange={handleInputChange}>
                                         <option value="">-- Sélectionner Zone --</option>
                                         {zones.map(z => (
-                                            <option key={z.id} value={z.zone_id}>
-                                                {z.ville} (ID: {z.zone_id})
+                                            <option key={z.id} value={z.ville}>
+                                                {z.ville}
                                             </option>
                                         ))}
                                     </select>
@@ -209,7 +209,8 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                                 <div className="input-block">
                                     <label>Véhicule</label>
                                     <select name="vehicleType" value={formData.vehicleType} onChange={handleInputChange}>
-                                        <option value="Moto">Moto</option><option value="Voiture">Voiture</option>
+                                        <option value="Moto">Moto</option>
+                                        <option value="Voiture">Voiture</option>
                                         <option value="Camionnette">Camionnette</option>
                                     </select>
                                 </div>
@@ -218,20 +219,40 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                                 <div className="input-block"><label>Matricule</label><input type="text" name="matricule" value={formData.matricule} onChange={handleInputChange} /></div>
                                 <div className="input-block"><label>N° Permis</label><input type="text" name="permisNumber" value={formData.permisNumber} onChange={handleInputChange} /></div>
                             </div>
+
                             {!isEditing && (
                                 <div className="form-row-grid">
                                     <div className="input-block"><label>Mot de passe</label><input type="password" name="password" required value={formData.password} onChange={handleInputChange} /></div>
-                                    <div className="input-block"><label>Confirmer MDP</label><input type="password" name="confirmPassword" required onChange={handleInputChange} /></div>
+                                    <div className="input-block"><label>Confirmer</label><input type="password" name="confirmPassword" required onChange={handleInputChange} /></div>
                                 </div>
                             )}
-                            <button type="submit" className="save-changes-btn">{isLoading ? <FaSpinner className="spinner" /> : "Enregistrer"}</button>
+                            <button type="submit" className="save-changes-btn" disabled={isLoading}>
+                                {isLoading ? <FaSpinner className="spinner" /> : "Enregistrer"}
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* Modal details stays the same */}
+            {showDetails && selectedLivreur && (
+                <div className="modal-overlay" onClick={() => setShowDetails(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Détails du Livreur</h3>
+                            <FaTimes onClick={() => setShowDetails(false)} style={{cursor:'pointer'}} />
+                        </div>
+                        <div className="modal-body">
+                            <p><strong>Nom:</strong> {selectedLivreur.firstName} {selectedLivreur.lastName}</p>
+                            <p><strong>Véhicule:</strong> {selectedLivreur.vehicleType} ({selectedLivreur.matricule})</p>
+                            <p><strong>N° Permis:</strong> {selectedLivreur.permisNumber}</p>
+                            <p><strong>Zone d'affectation:</strong> {selectedLivreur.zone}</p>
+                            <p><strong>Contact:</strong> {selectedLivreur.phone}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
 export default LivreursTab;

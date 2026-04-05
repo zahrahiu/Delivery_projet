@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from 'sweetalert2';
-import { FaArrowLeft, FaSpinner, FaTruck, FaCheckCircle, FaBalanceScale } from "react-icons/fa";
+import { FaArrowLeft, FaSpinner } from "react-icons/fa";
 import "./AddColisForm.css";
 
 interface UpdateColisProps {
@@ -14,18 +14,25 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
     const [loading, setLoading] = useState(false);
     const token = localStorage.getItem("token");
 
-    const ZONES_API = "http://localhost:5005/api/zones";
-    const PARCELS_API = `http://localhost:8082/api/parcels/${parcelToEdit.id}`;
-    const DRIVERS_API = "http://localhost:8081/api/profiles/drivers/zone";
+    // --- التعديل: استخدام الـ Gateway لجميع الخدمات ---
+    const GATEWAY_URL = "http://localhost:8888";
 
-    // --- التصحيح هنا: كنأكدو أننا كناخدو القيم اللي جاية من السيرفر ---
+    // 1. خدمة المناطق (Tarif-Zone-Service)
+    const ZONES_API = `${GATEWAY_URL}/tarif-zone-service/api/zones`;
+
+    // 2. خدمة الطرود (Parcel-Service)
+    const PARCELS_API = `${GATEWAY_URL}/parcel-service/api/parcels/${parcelToEdit.id}`;
+
+    // 3. خدمة المستخدمين (Users-Service) لجلب السائقين
+    const DRIVERS_API = `${GATEWAY_URL}/users-service/api/profiles/drivers/zone`;
+
     const [formData, setFormData] = useState({
         weight: parcelToEdit.weight ?? "",
         deliveryAddress: parcelToEdit.deliveryAddress ?? "",
         zoneId: parcelToEdit.zoneId ?? parcelToEdit.zone?.id ?? "",
         senderId: parcelToEdit.senderId ?? "",
         senderName: parcelToEdit.senderName ?? "",
-        senderPhone: parcelToEdit.senderPhone ?? parcelToEdit.clientPhone ?? "", // جربي هاد الزوج احتمالات
+        senderPhone: parcelToEdit.senderPhone ?? parcelToEdit.clientPhone ?? "",
         clientEmail: parcelToEdit.clientEmail ?? ""
     });
 
@@ -38,11 +45,11 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
     useEffect(() => {
         const initializeView = async () => {
             try {
-                // 1. جلب المناطق
+                // جلب المناطق عبر الـ Gateway
                 const resZones = await axios.get(ZONES_API, getHeaders());
                 setZones(Array.isArray(resZones.data) ? resZones.data : []);
 
-                // 2. جلب السائقين بناءً على المنطقة اللي ديجا كاينا في الكولي
+                // جلب السائقين للمنطقة الحالية
                 const zoneIdToUse = parcelToEdit.zoneId || parcelToEdit.zone?.id;
                 if (zoneIdToUse) {
                     const resDrivers = await axios.get(`${DRIVERS_API}/${zoneIdToUse}`, getHeaders());
@@ -61,6 +68,7 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
         setSelectedDriver("");
         if (zoneId) {
             try {
+                // تحديث قائمة السائقين عند تغيير المنطقة
                 const res = await axios.get(`${DRIVERS_API}/${zoneId}`, getHeaders());
                 setAvailableDrivers(res.data);
             } catch (err) { console.error(err); }
@@ -76,6 +84,7 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
             status: selectedDriver ? "ASSIGNED" : parcelToEdit.status
         };
         try {
+            // تحديث الطرد عبر الـ Gateway
             await axios.put(PARCELS_API, payload, getHeaders());
             Swal.fire({ icon: 'success', title: 'Modifié ! ✅', showConfirmButton: false, timer: 1500 });
             onUpdateSuccess();
@@ -97,7 +106,7 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
 
             <div className="form-card-container">
                 <form onSubmit={handleSubmit} className="clean-form">
-
+                    {/* ... باقي الـ JSX يبقى كما هو ... */}
                     <section className="form-section">
                         <div className="input-row">
                             <div className="input-field">

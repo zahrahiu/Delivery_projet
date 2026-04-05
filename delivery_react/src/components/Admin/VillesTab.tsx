@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaPlus, FaEdit, FaTrash, FaTimes, FaSearch } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaTimes } from "react-icons/fa";
 
 interface Tarif {
     id: number;
@@ -18,7 +18,8 @@ const VillesTab: React.FC = () => {
     const [currentId, setCurrentId] = useState<number | null>(null);
     const [formData, setFormData] = useState({ ref: "", ville: "", frais_livraison: "" });
 
-    const API_URL = "http://localhost:5005/api/tarifs";
+    // التعديل: الربط عبر الـ Gateway
+    const API_URL = "http://localhost:8888/tarif-zone-service/api/tarifs";
 
     const getAuthHeaders = () => ({
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
@@ -36,14 +37,14 @@ const VillesTab: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette ville ?")) return;
         try {
-            // تأكدي أن الـ ID كيوصل صحيح للـ URL
             const res = await axios.delete(`${API_URL}/${id}`, getAuthHeaders());
-            if(res.status === 200) {
+            if(res.status === 200 || res.status === 204) {
                 setVilles(villes.filter(v => v.id !== id));
+                alert("Ville supprimée ✅");
             }
         } catch (err) {
             console.error(err);
-            alert("Erreur lors de la suppression. Vérifiez si la ville est liée à une zone.");
+            alert("Erreur: Vérifiez si la ville est liée à une zone.");
         }
     };
 
@@ -71,11 +72,11 @@ const VillesTab: React.FC = () => {
             };
 
             if (isEditing && currentId) {
-                // تعديل مدينة موجودة باستعمال الـ ID
                 await axios.put(`${API_URL}/${currentId}`, payload, getAuthHeaders());
+                alert("Ville modifiée ✅");
             } else {
-                // إضافة مدينة جديدة
                 await axios.post(API_URL, { ...payload, colis: 0 }, getAuthHeaders());
+                alert("Ville ajoutée ✅");
             }
 
             setShowModal(false);
@@ -88,7 +89,13 @@ const VillesTab: React.FC = () => {
     return (
         <div className="tab-content-container">
             <div className="tab-header-actions">
-
+                {/* Search Bar (Optional but useful) */}
+                <input
+                    type="text"
+                    placeholder="Rechercher une ville..."
+                    className="search-input-v2"
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
                 <button className="add-main-btn" onClick={openAddModal}>
                     <FaPlus /> Ajouter Ville
                 </button>
@@ -106,27 +113,37 @@ const VillesTab: React.FC = () => {
                     </tr>
                     </thead>
                     <tbody>
-                    {villes.filter(v => v.ville.toLowerCase().includes(searchTerm.toLowerCase())).map((v) => (
-                        <tr key={v.id}>
-                            <td className="bold-text">#{v.ref}</td>
-                            <td>{v.ville}</td>
-                            <td><span className="price-tag">{v.frais_livraison} DH</span></td>
-                            <td><span className="zone-badge">{v.colis} Colis</span></td>
-                            <td className="actions-cell">
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                                    <FaEdit className="icon-edit-btn" onClick={() => openEditModal(v)} style={{ cursor: 'pointer', color: '#7367f0' }} />
-                                    <FaTrash className="icon-delete-btn" onClick={() => handleDelete(v.id)} style={{ cursor: 'pointer', color: '#f56565' }} />
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
+                    {villes
+                        .filter(v => v.ville.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map((v) => (
+                            <tr key={v.id}>
+                                <td className="bold-text">#{v.ref}</td>
+                                <td>{v.ville}</td>
+                                <td><span className="price-tag">{v.frais_livraison} DH</span></td>
+                                <td><span className="zone-badge">{v.colis} Colis</span></td>
+                                <td className="actions-cell">
+                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                                        <FaEdit
+                                            className="icon-edit-btn"
+                                            onClick={() => openEditModal(v)}
+                                            style={{ cursor: 'pointer', color: '#7367f0' }}
+                                        />
+                                        <FaTrash
+                                            className="icon-delete-btn"
+                                            onClick={() => handleDelete(v.id)}
+                                            style={{ cursor: 'pointer', color: '#f56565' }}
+                                        />
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
 
             {showModal && (
-                <div className="modal-overlay">
-                    <div className="modal-card">
+                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                    <div className="modal-card" onClick={e => e.stopPropagation()}>
                         <div className="modal-header-v2">
                             <h3>{isEditing ? "Modifier la ville" : "Nouvelle Ville"}</h3>
                             <FaTimes className="close-icon" onClick={() => setShowModal(false)} />
@@ -140,6 +157,7 @@ const VillesTab: React.FC = () => {
                                         value={formData.ref}
                                         onChange={(e)=>setFormData({...formData, ref: e.target.value})}
                                         required
+                                        placeholder="Ex: CAS-01"
                                     />
                                 </div>
                                 <div className="input-group-v2">
@@ -149,6 +167,7 @@ const VillesTab: React.FC = () => {
                                         value={formData.ville}
                                         onChange={(e)=>setFormData({...formData, ville: e.target.value})}
                                         required
+                                        placeholder="Ex: Casablanca"
                                     />
                                 </div>
                                 <div className="input-group-v2 full-width">
@@ -158,6 +177,7 @@ const VillesTab: React.FC = () => {
                                         value={formData.frais_livraison}
                                         onChange={(e)=>setFormData({...formData, frais_livraison: e.target.value})}
                                         required
+                                        placeholder="0.00"
                                     />
                                 </div>
                             </div>

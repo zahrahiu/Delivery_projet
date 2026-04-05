@@ -24,7 +24,7 @@ const Home: React.FC = () => {
     const [selectedCity, setSelectedCity] = useState(""); // المدينة المختارة
     const [loading, setLoading] = useState(true);
 
-    const API_URL = "http://localhost:5005/api/tarifs";
+    const API_URL = "http://localhost:8888/tarif-zone-service/api/tarifs";
 
     useEffect(() => {
         const fetchVilles = async () => {

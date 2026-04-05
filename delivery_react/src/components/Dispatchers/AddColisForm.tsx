@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from 'sweetalert2';
-import { FaArrowLeft, FaSpinner, FaTruck } from "react-icons/fa";
+import { FaArrowLeft, FaSpinner } from "react-icons/fa";
 import "./AddColisForm.css";
 
 interface AddColisProps {
@@ -12,10 +12,11 @@ const AddColisForm: React.FC<AddColisProps> = ({ onCancel }) => {
     const [loading, setLoading] = useState(false);
     const token = localStorage.getItem("token");
 
-    const TARIFS_API = "http://localhost:5005/api/tarifs";
-    const PARCELS_API = "http://localhost:8082/api/parcels";
-    const DRIVERS_API = "http://localhost:8081/api/profiles/drivers/zone";
-    const DELIVERY_NODE_API = "http://localhost:3001/deliveries";
+    // --- التعديل: توجيه جميع المسارات عبر الـ Gateway (8888) ---
+    const TARIFS_API = "http://localhost:8888/tarif-zone-service/api/tarifs";
+    const PARCELS_API = "http://localhost:8888/parcel-service/api/parcels";
+    const DRIVERS_API = "http://localhost:8888/users-service/api/profiles/drivers/zone";
+    const DELIVERY_NODE_API = "http://localhost:8888/delivery-service/deliveries";
 
     const [newParcel, setNewParcel] = useState({
         weight: "",
@@ -49,7 +50,8 @@ const AddColisForm: React.FC<AddColisProps> = ({ onCancel }) => {
         const selectedVille = villes.find(v => v.id.toString() === villeId);
 
         if (selectedVille) {
-            const zId = selectedVille.zone_id;
+            // ملاحظة: تأكدي أن الـ backend كيرجع zone_id أو zoneId (على حسب الـ DTO ديالك)
+            const zId = selectedVille.zone_id || selectedVille.zoneId;
             setNewParcel({ ...newParcel, zoneId: zId, deliveryAddress: selectedVille.ville });
 
             setAvailableDrivers([]);
@@ -77,16 +79,18 @@ const AddColisForm: React.FC<AddColisProps> = ({ onCancel }) => {
         };
 
         try {
+            // 1. إنشاء الكوليس في الـ Parcel Service
             const res = await axios.post(PARCELS_API, payload, getHeaders());
             const createdParcel = res.data;
 
+            // 2. إذا تم اختيار livreur، نقوم بمزامنة التعيين مع الـ Delivery Service (Node.js)
             if (selectedDriver && createdParcel.trackingNumber) {
                 try {
                     await axios.post(`${DELIVERY_NODE_API}/${createdParcel.trackingNumber}/assign`,
                         { livreurId: selectedDriver },
                         getHeaders()
                     );
-                    console.log("✅ Sync Node.js OK");
+                    console.log("✅ Sync Node.js via Gateway OK");
                 } catch (nodeErr) {
                     console.error("❌ Sync Node.js Failed:", nodeErr);
                 }
@@ -118,6 +122,7 @@ const AddColisForm: React.FC<AddColisProps> = ({ onCancel }) => {
             <div className="form-card-container">
                 <form onSubmit={handleSubmit} className="clean-form">
 
+                    {/* Expéditeur */}
                     <section className="form-section">
                         <div className="input-row">
                             <div className="input-field">
@@ -131,6 +136,7 @@ const AddColisForm: React.FC<AddColisProps> = ({ onCancel }) => {
                         </div>
                     </section>
 
+                    {/* Destination & Livreur */}
                     <section className="form-section">
                         <div className="input-row">
                             <div className="input-field">
@@ -158,6 +164,7 @@ const AddColisForm: React.FC<AddColisProps> = ({ onCancel }) => {
                         </div>
                     </section>
 
+                    {/* Détails du colis */}
                     <section className="form-section">
                         <div className="input-row">
                             <div className="input-field">

@@ -28,36 +28,40 @@ const statusData = [
 const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
 
-    // States لتمثيل الأعداد الحقيقية
+    // States للأعداد الحقيقية
     const [livreursCount, setLivreursCount] = useState(0);
     const [clientsCount, setClientsCount] = useState(0);
     const [dispatchersCount, setDispatchersCount] = useState(0);
+    const [totalParcels, setTotalParcels] = useState(0);
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
 
-    const API_URL = "http://localhost:8081/api/profiles";
+    // الروابط الجديدة عبر الـ Gateway
+    const USERS_API = "http://localhost:8888/users-service/api/profiles";
+    const PARCELS_API = "http://localhost:8888/parcel-service/api/parcels";
 
     const fetchCounts = async () => {
         try {
             const token = localStorage.getItem("token");
-            const res = await axios.get(API_URL, {
+            const config = {
                 headers: { Authorization: `Bearer ${token}` }
-            });
+            };
 
-            const allUsers = res.data;
+            // 1. جلب بيانات المستخدمين وتفصيلهم حسب الـ Role
+            const resUsers = await axios.get(USERS_API, config);
+            const allUsers = resUsers.data;
 
-            // حساب الأعداد بناءً على الـ Role
-            const livreurs = allUsers.filter((u: any) => u.role === "LIVREUR").length;
-            const clients = allUsers.filter((u: any) => u.role === "CLIENT").length;
-            const dispatchers = allUsers.filter((u: any) => u.role === "DISPATCHER").length;
+            setLivreursCount(allUsers.filter((u: any) => u.role === "LIVREUR").length);
+            setClientsCount(allUsers.filter((u: any) => u.role === "CLIENT").length);
+            setDispatchersCount(allUsers.filter((u: any) => u.role === "DISPATCHER").length);
 
-            setLivreursCount(livreurs);
-            setClientsCount(clients);
-            setDispatchersCount(dispatchers);
+            // 2. جلب إجمالي الكولي من ميكروسيرفيس الطرود
+            const resParcels = await axios.get(PARCELS_API, config);
+            setTotalParcels(resParcels.data.length);
 
         } catch (error) {
-            console.error("Error fetching counts:", error);
+            console.error("Error fetching dashboard data:", error);
         }
     };
 
@@ -85,27 +89,26 @@ const AdminDashboard: React.FC = () => {
                 <section className="content-body">
                     {activeTab === "dashboard" && (
                         <div className="dashboard-wrapper">
-                            {/* Stats Cards (Dynamic Numbers) */}
                             <div className="stats-grid-top">
                                 <div className="stat-item purple-light">
                                     <div className="icon-circle"><FaBox /></div>
                                     <div className="texts">
                                         <span>Total Colis</span>
-                                        <h2>2,840</h2> {/* هادي غتحتاجي API ديال الـ Orders مستقبلا */}
+                                        <h2>{totalParcels}</h2>
                                     </div>
                                 </div>
                                 <div className="stat-item blue-light">
                                     <div className="icon-circle"><FaTruck /></div>
                                     <div className="texts">
                                         <span>Livreurs Actifs</span>
-                                        <h2>{livreursCount}</h2> {/* عدد حقيقي */}
+                                        <h2>{livreursCount}</h2>
                                     </div>
                                 </div>
                                 <div className="stat-item green-light">
                                     <div className="icon-circle"><FaUsers /></div>
                                     <div className="texts">
                                         <span>Clients</span>
-                                        <h2>{clientsCount}</h2> {/* عدد حقيقي */}
+                                        <h2>{clientsCount}</h2>
                                     </div>
                                 </div>
                             </div>
@@ -145,7 +148,6 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Recent Activity Section - كمالة الـ Dashboard */}
                             <div className="recent-activity-section">
                                 <div className="header-flex-table">
                                     <h3>Dernières Expéditions 🚚</h3>
@@ -163,7 +165,6 @@ const AdminDashboard: React.FC = () => {
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        {/* هادو تقدري ترجعيهم ديناميكيين من بعد من الـ API ديال Orders */}
                                         <tr>
                                             <td>#LM-9021</td>
                                             <td>Ahmed Ali</td>
@@ -178,13 +179,6 @@ const AdminDashboard: React.FC = () => {
                                             <td>Rabat</td>
                                             <td><span className="badge yellow">En cours</span></td>
                                         </tr>
-                                        <tr>
-                                            <td>#LM-9023</td>
-                                            <td>Mehdi H.</td>
-                                            <td>Omar</td>
-                                            <td>Tangier</td>
-                                            <td><span className="badge red">Retourné</span></td>
-                                        </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -192,22 +186,11 @@ const AdminDashboard: React.FC = () => {
                         </div>
                     )}
 
-                    {activeTab === "dispatchers" && (
-                        <DispatchersTab onDispatchersUpdate={fetchCounts} />
-                    )}
-
-                    {activeTab === "livreurs" && (
-                        <LivreursTab onLivreursUpdate={fetchCounts} />
-                    )}
-
-                    {activeTab === "clients" && (
-                        <ClientsTab onClientsUpdate={fetchCounts} />
-                    )}
-
+                    {activeTab === "dispatchers" && <DispatchersTab onDispatchersUpdate={fetchCounts} />}
+                    {activeTab === "livreurs" && <LivreursTab onLivreursUpdate={fetchCounts} />}
+                    {activeTab === "clients" && <ClientsTab onClientsUpdate={fetchCounts} />}
                     {activeTab === "villes" && <VillesTab />}
-
-                    {activeTab == "zones" && <ZonesTab/>}
-
+                    {activeTab === "zones" && <ZonesTab/>}
                 </section>
             </main>
         </div>

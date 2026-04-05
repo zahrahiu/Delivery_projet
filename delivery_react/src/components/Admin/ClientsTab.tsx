@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
     FaEdit, FaTrash, FaArrowLeft, FaSpinner,
-    FaEye, FaTimes, FaChevronLeft, FaChevronRight, FaPlus, FaUser
+    FaEye, FaTimes, FaChevronLeft, FaChevronRight, FaUser
 } from "react-icons/fa";
 
 interface Client {
@@ -32,8 +32,13 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
     };
 
     const [formData, setFormData] = useState(initialForm);
-    const API_URL = "http://localhost:8081/api/profiles";
-    const getAuthHeader = () => ({ Authorization: `Bearer ${localStorage.getItem("token")}` });
+
+    // الرابط الجديد عبر الـ Gateway
+    const API_URL = "http://localhost:8888/users-service/api/profiles";
+
+    const getAuthHeader = () => ({
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+    });
 
     const fetchClients = async () => {
         try {
@@ -41,7 +46,9 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
             const filtered = response.data.filter((u: any) => u.role === "CLIENT");
             setClients(filtered);
             if (onClientsUpdate) onClientsUpdate(filtered.length);
-        } catch (error) { console.error("Fetch Error:", error); }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+        }
     };
 
     useEffect(() => { fetchClients(); }, []);
@@ -57,26 +64,26 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // التحقق من تطابق كلمة السر عند الإنشاء فقط
+        if (!isEditing && formData.password !== formData.confirmPassword) {
+            alert("Les mots de passe ne correspondent pas !");
+            return;
+        }
+
         setIsLoading(true);
 
         try {
             if (isEditing) {
-                // --- حالة التعديل (Update) : كنستعملو FormData حيت كاين ملف/تصويرة ---
-                const dataToSend = new FormData();
-                Object.keys(formData).forEach(key => {
-                    // @ts-ignore
-                    if (formData[key] !== null) dataToSend.append(key, formData[key]);
-                });
-
-                await axios.put(`${API_URL}/${formData.userId}`, dataToSend, {
-                    headers: { ...getAuthHeader(), 'Content-Type': 'multipart/form-data' }
+                // في التعديل: كنصيفطو JSON عادي (إلا إذا كنتي دايرة تصويرة البروفايل، ديك ساعة كنستعملو FormData)
+                const { confirmPassword, ...payload } = formData;
+                await axios.put(`${API_URL}/${formData.userId}`, payload, {
+                    headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }
                 });
                 alert("Modifié avec succès ✅");
             } else {
-                // --- حالة إنشاء جديد (Create) : صيفطي JSON عادي حيت الـ Backend كيتسنى @RequestBody ---
-                // كنحيدو confirmPassword باش ما تمشيش لـ Java
+                // في الإنشاء: كنحيدو الـ ID و الـ confirmPassword
                 const { confirmPassword, userId, ...payload } = formData;
-
                 await axios.post(API_URL, payload, {
                     headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }
                 });
@@ -88,7 +95,7 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
             fetchClients();
         } catch (error: any) {
             console.error("Error details:", error.response?.data);
-            alert("Erreur lors de l'enregistrement: " + (error.response?.data?.message || "Check Console"));
+            alert("Erreur: " + (error.response?.data?.message || "Vérifiez la console"));
         } finally {
             setIsLoading(false);
         }
@@ -99,7 +106,9 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
             try {
                 await axios.delete(`${API_URL}/${id}`, { headers: getAuthHeader() });
                 fetchClients();
-            } catch (error) { alert("Erreur."); }
+            } catch (error) {
+                alert("Erreur lors de la suppression.");
+            }
         }
     };
 
@@ -124,11 +133,11 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
                                     <td style={{ display: 'flex', alignItems: 'center' }}>
                                         <FaUser style={{ marginRight: '10px', color: '#777', flexShrink: 0 }} />
                                         <span>{c.firstName} {c.lastName}</span>
-                                    </td>                                <td>{c.phone} <br/><small style={{color:'#888'}}>{c.email}</small></td>
+                                    </td>
+                                    <td>{c.phone} <br/><small style={{color:'#888'}}>{c.email}</small></td>
                                     <td>{c.cni || "---"}</td>
                                     <td><span className="zone-badge">{c.zone}</span></td>
                                     <td className="action-buttons">
-
                                         <FaEye className="icon-view" onClick={() => { setSelectedClient(c); setShowDetails(true); }} />
                                         <FaEdit className="icon-edit" onClick={() => { setFormData({...formData, ...c, userId: c.userId.toString()}); setIsEditing(true); setIsFormOpen(true); }} />
                                         <FaTrash className="icon-delete" onClick={() => handleDelete(c.userId)} />
@@ -173,18 +182,24 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
                                     <div className="input-block"><label>Confirmer</label><input type="password" name="confirmPassword" required onChange={handleInputChange} /></div>
                                 </div>
                             )}
-                            <button type="submit" className="save-changes-btn">{isLoading ? <FaSpinner className="spinner" /> : "Enregistrer"}</button>
+                            <button type="submit" className="save-changes-btn" disabled={isLoading}>
+                                {isLoading ? <FaSpinner className="spinner" /> : "Enregistrer"}
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
 
             {showDetails && selectedClient && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <div className="modal-header"><h3>Détails Client</h3><FaTimes onClick={() => setShowDetails(false)} style={{cursor:'pointer'}} /></div>
+                <div className="modal-overlay" onClick={() => setShowDetails(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Détails Client</h3>
+                            <FaTimes onClick={() => setShowDetails(false)} style={{cursor:'pointer'}} />
+                        </div>
                         <div className="modal-body">
                             <p><strong>Nom:</strong> {selectedClient.firstName} {selectedClient.lastName}</p>
+                            <p><strong>Email:</strong> {selectedClient.email}</p>
                             <p><strong>Téléphone:</strong> {selectedClient.phone}</p>
                             <p><strong>CNI:</strong> {selectedClient.cni || "N/A"}</p>
                             <p><strong>Zone:</strong> {selectedClient.zone}</p>
@@ -196,4 +211,5 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
         </div>
     );
 };
+
 export default ClientsTab;

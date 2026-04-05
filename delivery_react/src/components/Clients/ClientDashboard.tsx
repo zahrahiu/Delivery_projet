@@ -6,7 +6,11 @@ import TopHeader from "../common/TopHeader";
 const ClientDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [userData, setUserData] = useState<any>(null); // ضروري نزيدو الـ State ديال userData
+    const [userData, setUserData] = useState<any>(null);
+
+    // --- التعديل: استخدام الـ Gateway واسم الخدمة ---
+    const GATEWAY_URL = "http://localhost:8888";
+    const USER_PROFILE_API = `${GATEWAY_URL}/users-service/api/profiles/details`;
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -14,17 +18,18 @@ const ClientDashboard: React.FC = () => {
                 const token = localStorage.getItem("token");
                 if (!token) return;
 
-                // فك التوكين لجلب الـ userId
+                // استخراج الـ userId من الـ Token
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 const userId = payload.userId;
 
-                // جلب بيانات المستخدم باش يظهر الاسم في الـ Navbar
-                const response = await axios.get(`http://localhost:8081/api/profiles/details/${userId}`, {
+                // طلب البيانات عبر الـ Gateway
+                const response = await axios.get(`${USER_PROFILE_API}/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+
                 setUserData(response.data);
             } catch (error) {
-                console.error("خطأ في جلب بيانات المستخدم:", error);
+                console.error("Erreur lors de la récupération des données client:", error);
             }
         };
         fetchUserData();
@@ -32,6 +37,7 @@ const ClientDashboard: React.FC = () => {
 
     return (
         <div className="admin-container" onClick={() => setIsMenuOpen(false)}>
+            {/* تأكدي أن الـ Sidebar كيقبل الـ role "CLIENT" */}
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role="CLIENT" />
 
             <main className="main-content">
@@ -39,11 +45,21 @@ const ClientDashboard: React.FC = () => {
                     activeTab={activeTab}
                     isMenuOpen={isMenuOpen}
                     setIsMenuOpen={setIsMenuOpen}
-                    user={userData} // دابا الـ userData معرفة وغادي تظهر الاسم
+                    user={userData} // إرسال البيانات لعرض الاسم والصورة الفوق
                 />
 
                 <section className="content-body">
-                    {activeTab === "dashboard" && <h1>Bienvenue {userData?.firstName || "Client"}</h1>}
+                    {activeTab === "dashboard" && (
+                        <div className="welcome-message">
+                            <h1>Bienvenue {userData?.firstName || "Client"} 👋</h1>
+                            <p>Suivez vos colis "Qrib Lik" en temps réel.</p>
+                        </div>
+                    )}
+
+                    {/* هنا غتزيدي المكونات الخاصة بالزبون بحال تتبع الطلبيات */}
+                    {activeTab === "mes-commandes" && (
+                        <div>{/* <ClientOrders /> */}</div>
+                    )}
                 </section>
             </main>
         </div>
