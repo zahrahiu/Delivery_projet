@@ -18,6 +18,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="Parcel_Service" />
+        <module name="Configuration-Service" />
         <module name="discovery-server" />
         <module name="service_security" />
         <module name="gateway-service" />
@@ -31,6 +32,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Configuration-Service" options="-parameters" />
       <module name="Discovery-Service" options="-parameters" />
       <module name="Gateway-Service" options="-parameters" />
       <module name="Parcel_Service" options="-parameters" />
