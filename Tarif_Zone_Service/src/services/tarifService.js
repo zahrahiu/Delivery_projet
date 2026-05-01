@@ -45,3 +45,14 @@ exports.createTarif = async (data) => {
     const result = await db.query(query, [ref, ville, frais_livraison, colis || 0]);
     return result.rows[0];
 };
+
+
+exports.getTarifByZoneAndCity = async (zoneId, ville) => {
+    const result = await db.query(
+        `SELECT frais_livraison FROM tarifs 
+         WHERE zone_id = $1 AND UPPER(ville) = UPPER($2) 
+         LIMIT 1`,
+        [zoneId, ville]
+    );
+    return result.rows[0];
+};

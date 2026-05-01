@@ -27,6 +27,17 @@ public class UserResponseDTO {
     private String tokenType;
     private Integer tokenExpiresIn;
 
+    private boolean firstLogin;
+
+
+    public boolean isFirstLogin() {
+        return firstLogin;
+    }
+
+    public void setFirstLogin(boolean firstLogin) {
+        this.firstLogin = firstLogin;
+    }
+
     public String getAccessToken() {
         return accessToken;
     }
@@ -122,4 +133,6 @@ public class UserResponseDTO {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+
 }

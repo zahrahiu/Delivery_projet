@@ -41,9 +41,7 @@ exports.unassignVille = async (req, res) => {
     }
 };
 
-// controllers/zoneController.js
 
-// ... بقية الدوال (getAllZones, createZone...)
 
 exports.deleteZone = async (req, res) => {
     const { id } = req.params;

@@ -34,8 +34,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-
-    private boolean active = true;
+    // فـ security-service / entities / User.java
+    private boolean active = false; // هادي غتخلي الـ Admin هو اللي يـقبلو
+    private boolean firstLogin = false; // غتولي true غير فاش كيكريه الأدمين
 
     private LocalDateTime createdAt = LocalDateTime.now();
 

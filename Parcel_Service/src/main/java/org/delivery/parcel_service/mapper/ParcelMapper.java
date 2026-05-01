@@ -18,8 +18,16 @@ public class ParcelMapper {
                 .zoneId(dto.getZoneId())
                 .senderId(dto.getSenderId())
                 .senderName(dto.getSenderName())
+                .cityName(dto.getCityName())
+                .clientName(dto.getClientName())
+                .deliveryNotes(dto.getDeliveryNotes())
+                .signature(dto.getSignature())
                 .senderPhone(dto.getSenderPhone())
-                .senderEmail(dto.getClientEmail())
+                .latitude(dto.getLatitude())
+                .actionType(dto.getActionType())
+                .longitude(dto.getLongitude())
+                .trackingNumber(dto.getTrackingNumber())
+                .clientEmail(dto.getClientEmail()) // رديها clientEmail
                 .status(ParcelStatus.PENDING)
                 .build();
     }
@@ -30,13 +38,24 @@ public class ParcelMapper {
         dto.setTrackingNumber(parcel.getTrackingNumber());
         dto.setWeight(parcel.getWeight());
         dto.setDeliveryAddress(parcel.getDeliveryAddress());
-
+dto.setZoneId(parcel.getZoneId());
+dto.setCityName(parcel.getCityName());
         // تعديل هنا باش ياخد الداتا الحقيقية من الـ Entity
         dto.setSenderName(parcel.getSenderName() != null ? parcel.getSenderName() : "Unknown");
         dto.setSenderPhone(parcel.getSenderPhone() != null ? parcel.getSenderPhone() : "N/A");
+        dto.setLatitude(parcel.getLatitude());
+        dto.setLongitude(parcel.getLongitude());
+        dto.setActionType(parcel.getActionType());
+        dto.setDeliveryNotes(parcel.getDeliveryNotes());
+        dto.setSignature(parcel.getSignature());
+        dto.setDeliveryAddress(parcel.getDeliveryAddress());
+        dto.setClientName(parcel.getClientName());
+
 
         // زيدي هاد السطر باش Node.js يلقى الإيميل:
-        dto.setClientEmail(parcel.getSenderEmail());
+        dto.setClientEmail(parcel.getClientEmail()); // رديها clientEmail
+
+        dto.setAssignedLivreurId(parcel.getAssignedLivreurId());
 
         dto.setStatus(parcel.getStatus() != null ? parcel.getStatus().name() : "PENDING");
         return dto;

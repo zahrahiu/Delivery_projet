@@ -4,6 +4,8 @@ package org.delivery.users_service.DTO;
 import lombok.Data;
 import org.delivery.users_service.entities.RoleType;
 
+import java.time.LocalDate;
+
 @Data
 public class UserResponseDTO {
     private Integer userId;
@@ -16,6 +18,8 @@ public class UserResponseDTO {
         private String zone;  // خاص تكون zone ماشي city
         private String address;
         private RoleType role;
+    private LocalDate dateNaissance;  // 🔥 أضف هاد السطر
+
     private String vehicleType;
 
     private String matricule;

@@ -11,9 +11,14 @@ const processParcel = async (parcelData) => {
     return await pool.query(query, values);
 };
 
-const assignLivreur = async (id, livreurId) => {
-    const query = `UPDATE "Delivery" SET "assignedLivreur" = $1 WHERE id = $2`;
-    return await pool.query(query, [livreurId, id]);
+const assignLivreur = async (trackingNumber, livreurId) => {
+    const query = `UPDATE "Delivery" SET "assignedLivreur" = $1 WHERE "trackingNumber" = $2 RETURNING *`;
+    const result = await pool.query(query, [livreurId, trackingNumber]);
+
+    if (result.rowCount === 0) {
+        throw new Error("Colis non trouvé dans Delivery Service");
+    }
+    return result.rows[0];
 };
 
 module.exports = { processParcel, assignLivreur };

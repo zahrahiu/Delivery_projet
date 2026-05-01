@@ -12,7 +12,7 @@ const runConsumer = async (onMessageReceived) => {
     console.log("✅ Kafka Consumer Connecté...");
 
     // 1. كنتصنتو لـ كاع الـ Topics اللي محتاجين
-    await consumer.subscribe({ topics: ['parcel-events', 'user-creation-topic'], fromBeginning: false });
+    await consumer.subscribe({ topics: ['parcel-events', 'user-creation-topic', 'parcel-update-events'], fromBeginning: false });
 
     await consumer.run({
         eachMessage: async ({ topic, message }) => { // زدنا topic هنا

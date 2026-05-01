@@ -12,4 +12,6 @@ public interface UserProfileService {
     List<UserResponseDTO> getAllProfiles();
     void deleteProfile(Integer id);
     UserResponseDTO updateUserProfile(Integer id, UserRequestDTO request, MultipartFile file);
-    List<UserResponseDTO> getDriversByZone(String zoneId);}
+    List<UserResponseDTO> getDriversByZone(String zoneId);
+    UserResponseDTO activateUser(Integer id);
+}

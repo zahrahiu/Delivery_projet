@@ -1,6 +1,8 @@
 package org.gym.service_security.controllers;
 
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.gym.service_security.dto.RefreshTokenRequestDTO;
@@ -23,7 +25,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -39,10 +40,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Tag(name = "Users", description = "API pour la gestion des utilisateurs")
 @RestController
 @RequestMapping("/v1/users")
-@Tag(name = "Users", description = "API pour la gestion des utilisateurs")
+@Tag(name = "Users", description = "API pour la gestion des utilisateurs et l'authentification")
 public class UserController {
 
     private final UserService userService;
@@ -52,7 +52,7 @@ public class UserController {
     private final RefreshTokenService refreshTokenService;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UserMapper userMapper; // Injecter ton mapper
+    private final UserMapper userMapper;
 
     public UserController(UserService userService, AuthenticationManager authenticationManager, JwtEncoder jwtEncoder,
                           UserRepository userRepository, RefreshTokenService refreshTokenService,
@@ -67,86 +67,9 @@ public class UserController {
         this.userMapper = userMapper;
     }
 
-    // --- CREATE USER ---
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/create")
-    public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserRequestDTO request) {
-        UserResponseDTO response = userService.createUser(request);
-
-        if (!response.isActive()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    // --- GET USER BY ID ---
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Integer id) {
-        return ResponseEntity.ok(userService.getUserById(id));
-    }
-
-    // --- GET ALL USERS ---
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers(@AuthenticationPrincipal Jwt jwt) {
-        List<UserResponseDTO> users = userService.getAllUsers();
-        List<String> roles = jwt.getClaim("roles");
-
-        if (roles.contains("ADMIN")) return ResponseEntity.ok(users);
-
-        if (roles.contains("MANAGER")) {
-            List<String> internalRoles = List.of("HOUSEKEEPING", "RECEPTIONNISTE", "MAINTENANCE", "COMPTABLE", "MANAGER");
-            List<UserResponseDTO> filteredUsers = users.stream()
-                    .filter(u -> u.getRoles().stream().anyMatch(internalRoles::contains))
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(filteredUsers);
-        }
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-    }
-
-    // --- DELETE USER ---
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Integer id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok("Utilisateur supprimé avec succès");
-    }
-
-    // --- ASSIGN ROLE ---
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/{userId}/roles")
-    public ResponseEntity<UserResponseDTO> assignRoleToUser(@PathVariable Integer userId, @RequestParam String roleName) {
-        return ResponseEntity.ok(userService.assignRoleToUser(userId, roleName));
-    }
-
-    // --- UPDATE USER STATUS ---
-    @PreAuthorize("hasRole('ADMIN')")
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<UserResponseDTO> updateUserStatus(@PathVariable Integer id, @RequestBody Map<String, Boolean> request) {
-        Boolean active = request.get("active");
-        if (active == null) return ResponseEntity.badRequest().build();
-
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-        user.setActive(active);
-        User updatedUser = userRepository.save(user);
-
-        UserResponseDTO response = userMapper.Entity_to_DTO(updatedUser);
-        return ResponseEntity.ok(response);
-    }
-
-    // --- REGISTER CLIENT ---
-    @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> registerUserClient(@Valid @RequestBody UserRequestDTO request) {
-        request.setRole(Set.of("CLIENT"));
-        UserResponseDTO response = userService.createUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    // --- LOGIN ---
+    @Operation(summary = "Authentification (Login) pour obtenir les tokens")
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDTO> login(@RequestBody UserRequestDTO request) {
+    public ResponseEntity<?> login(@RequestBody UserRequestDTO request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -155,10 +78,12 @@ public class UserController {
             User user = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
+            if (!user.isActive()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "الحساب ديالك قيد المراجعة من طرف الإدارة"));
+            }
+
             Set<String> roles = user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
-            Set<String> permissions = user.getRoles().stream()
-                    .flatMap(r -> r.getPermissions().stream())
-                    .map(PermissionEntity::getName).collect(Collectors.toSet());
 
             Instant now = Instant.now();
             String authorities = authentication.getAuthorities().stream()
@@ -171,127 +96,196 @@ public class UserController {
                     .subject(authentication.getName())
                     .claim("authorities", authorities)
                     .claim("email", user.getEmail())
-                    .claim("prenom", user.getFirstName())
-                    .claim("nom", user.getLastName())
                     .claim("userId", user.getId())
                     .claim("roles", roles)
-                    .claim("permissions", permissions)
-                    .claim("type", "access")
+                    .claim("firstLogin", user.isFirstLogin())
                     .build();
 
             String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
-            UserResponseDTO response = new UserResponseDTO();
-            response.setId(user.getId());
-            response.setEmail(user.getEmail());
-            response.setFirstName(user.getFirstName());
-            response.setLastName(user.getLastName());
-            response.setActive(user.isActive());
-            response.setRoles(roles);
+            UserResponseDTO response = userMapper.Entity_to_DTO(user);
             response.setAccessToken(accessToken);
             response.setRefreshToken(refreshToken.getToken());
             response.setTokenType("Bearer");
             response.setTokenExpiresIn(3600);
+            response.setFirstLogin(user.isFirstLogin());
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Email ou mot de passe incorrect"));
         }
     }
 
-    // --- REFRESH TOKEN ---
-    @PostMapping("/refresh")
-    public ResponseEntity<UserResponseDTO> refresh(@RequestBody RefreshTokenRequestDTO request) {
+    @Operation(summary = "Inscription d'un nouveau profil (Client ou Livreur)")
+    @PostMapping("/register")
+    public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody UserRequestDTO request) {
+        if (request.getRole() == null || request.getRole().isEmpty()) {
+            request.setRole(Set.of("CLIENT"));
+        }
+        UserResponseDTO response = userService.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(summary = "Mettre à jour un utilisateur")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_DISPATCHER')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Object> updates) {
+
+        System.out.println("🔄 Updating user with ID: " + id);
+        System.out.println("📝 Updates received: " + updates);
+
         try {
-            RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
-            User user = refreshToken.getUser();
-            if (!user.isActive()) {
-                refreshTokenService.revokeRefreshToken(refreshToken.getToken());
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec ID: " + id));
+
+            if (updates.containsKey("firstName") && updates.get("firstName") != null) {
+                user.setFirstName((String) updates.get("firstName"));
+            }
+            if (updates.containsKey("lastName") && updates.get("lastName") != null) {
+                user.setLastName((String) updates.get("lastName"));
+            }
+            if (updates.containsKey("email") && updates.get("email") != null) {
+                user.setEmail((String) updates.get("email"));
+            }
+            if (updates.containsKey("password") && updates.get("password") != null && !((String) updates.get("password")).isEmpty()) {
+                user.setPassword(passwordEncoder.encode((String) updates.get("password")));
             }
 
-            Set<String> roles = user.getRoles().stream().map(Role::getName).collect(Collectors.toSet());
-            Set<String> permissions = user.getRoles().stream()
-                    .flatMap(r -> r.getPermissions().stream())
-                    .map(PermissionEntity::getName).collect(Collectors.toSet());
+            User savedUser = userRepository.save(user);
+            System.out.println("✅ User updated successfully: " + savedUser.getEmail());
 
-            Instant now = Instant.now();
-            JwtClaimsSet claims = JwtClaimsSet.builder()
-                    .issuer("microservice-security")
-                    .issuedAt(now)
-                    .expiresAt(now.plus(1, ChronoUnit.HOURS))
-                    .subject(user.getEmail())
-                    .claim("email", user.getEmail())
-                    .claim("userId", user.getId())
-                    .claim("prenom", user.getFirstName())
-                    .claim("nom", user.getLastName())
-                    .claim("roles", roles)
-                    .claim("permissions", permissions)
-                    .claim("type", "access")
-                    .build();
+            return ResponseEntity.ok(userMapper.Entity_to_DTO(savedUser));
 
-            String newAccessToken = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-            RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
-            refreshTokenService.revokeRefreshToken(refreshToken.getToken());
-
-            UserResponseDTO response = new UserResponseDTO();
-            response.setId(user.getId());
-            response.setEmail(user.getEmail());
-            response.setFirstName(user.getFirstName());
-            response.setLastName(user.getLastName());
-            response.setActive(user.isActive());
-            response.setRoles(roles);
-            response.setAccessToken(newAccessToken);
-            response.setRefreshToken(newRefreshToken.getToken());
-            response.setTokenType("Bearer");
-            response.setTokenExpiresIn(3600);
-
-            return ResponseEntity.ok(response);
-
+        } catch (RuntimeException e) {
+            System.err.println("❌ Error updating user: " + e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            System.err.println("❌ Unexpected error: " + e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Une erreur est survenue lors de la mise à jour");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
-    // --- LOGOUT ---
+    @Operation(summary = "Activer ou désactiver un compte utilisateur (Admin)")
     @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<UserResponseDTO> updateUserStatus(@PathVariable Integer id, @RequestBody Map<String, Boolean> request) {
+        Boolean active = request.get("active");
+        System.out.println("🔄 Updating user status - ID: " + id + ", Active: " + active);
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec ID: " + id));
+
+        user.setActive(active);
+
+        // 🔥🔥🔥 Seulement les clients créés par Admin (qui ont firstLogin=false au départ)
+        // ont besoin de changer leur mot de passe
+        if (active) {
+            boolean isClient = user.getRoles().stream().anyMatch(r -> r.getName().equals("CLIENT"));
+            if (isClient && !user.isFirstLogin()) {
+                // Client créé par Admin (firstLogin=false) -> a besoin de changer password
+                user.setFirstLogin(true);
+                System.out.println("✅ Client created by Admin, firstLogin set to true: " + user.getEmail());
+            } else if (isClient) {
+                // Client déjà existant (firstLogin=true) -> on garde
+                user.setFirstLogin(true);
+            } else {
+                user.setFirstLogin(false);
+            }
+        }
+
+        User savedUser = userRepository.save(user);
+        System.out.println("✅ User status updated: " + savedUser.getEmail() + " -> Active: " + savedUser.isActive());
+
+        return ResponseEntity.ok(userMapper.Entity_to_DTO(savedUser));
+    }
+
+    @Operation(summary = "Créer un utilisateur par l'Admin")
+    @PostMapping("/create")
+    public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserRequestDTO request) {
+        UserResponseDTO response = userService.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Integer id) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public ResponseEntity<List<UserResponseDTO>> getAllUsers(@AuthenticationPrincipal Jwt jwt) {
+        List<UserResponseDTO> users = userService.getAllUsers();
+        List<String> roles = jwt.getClaim("roles");
+
+        if (roles.contains("ADMIN")) return ResponseEntity.ok(users);
+
+        if (roles.contains("MANAGER")) {
+            List<String> internalRoles = List.of("HOUSEKEEPING", "RECEPTIONNISTE", "MAINTENANCE", "COMPTABLE", "MANAGER");
+            return ResponseEntity.ok(users.stream()
+                    .filter(u -> u.getRoles().stream().anyMatch(internalRoles::contains))
+                    .collect(Collectors.toList()));
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteUser(@PathVariable Integer id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok("Utilisateur supprimé avec succès");
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestBody RefreshTokenRequestDTO request) {
         try {
             refreshTokenService.revokeRefreshToken(request.getRefreshToken());
             return ResponseEntity.ok("Déconnexion réussie");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Erreur lors de la déconnexion");
-        }
-    }
-
-    // --- LOGOUT ALL ---
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/logout-all")
-    public ResponseEntity<String> logoutAll(@RequestParam String email) {
-        try {
-            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
-            refreshTokenService.revokeAllUserTokens(user.getId());
-            return ResponseEntity.ok("Déconnexion de tous les appareils réussie");
-        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Erreur");
         }
     }
 
-    @GetMapping("/admin/dashboard")
+    @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> getAdminDashboard() {
-        return ResponseEntity.ok("Welcome to Admin Dashboard");
+    public ResponseEntity<List<UserResponseDTO>> getPendingUsers() {
+        List<User> pendingUsers = userRepository.findByActiveFalse();
+        List<UserResponseDTO> response = pendingUsers.stream()
+                .map(userMapper::Entity_to_DTO)
+                .collect(Collectors.toList());
+        System.out.println("📊 Pending users count: " + response.size());
+        return ResponseEntity.ok(response);
     }
 
-    // --- UPDATE USER ---
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Integer id, @RequestBody UserRequestDTO request) {
-        // هاد الدالة خاصك تزيديها فـ UserService
-        UserResponseDTO response = userService.updateUser(id, request);
+    @PatchMapping("/{id}/change-password")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_CLIENT', 'ROLE_LIVREUR', 'ROLE_DISPATCHER')")
+    public ResponseEntity<?> changePassword(
+            @PathVariable Integer id,
+            @RequestBody Map<String, String> request) {
+
+        String newPassword = request.get("password");
+        System.out.println("🔄 Changing password for user ID: " + id);
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé avec ID: " + id));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setFirstLogin(false);
+        User savedUser = userRepository.save(user);
+
+        System.out.println("✅ Password changed successfully for: " + savedUser.getEmail());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Mot de passe modifié avec succès");
         return ResponseEntity.ok(response);
     }
 }

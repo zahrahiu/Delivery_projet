@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.delivery.users_service.client.SecurityClient;
 import org.delivery.users_service.DTO.UserRequestDTO;
 import org.delivery.users_service.DTO.UserResponseDTO;
+import org.delivery.users_service.entities.RoleType;
 import org.delivery.users_service.entities.UserProfile;
 import org.delivery.users_service.events.UserEventProducer;
 import org.delivery.users_service.mapper.UserMapper;
@@ -59,32 +60,45 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Override
     public UserResponseDTO createUserProfile(UserRequestDTO request) {
+        if (repository.existsByEmailIgnoreCase(request.getEmail())) {
+            throw new RuntimeException("EMAIL_ALREADY_EXISTS");
+        }
+
+        boolean isDirectAdminCreation = "ADMIN".equals(request.getCreatedBy()) || request.getRole() == RoleType.DISPATCHER;
+
+        // 1. Prepare Security Service Request
         Map<String, Object> securityReq = new HashMap<>();
         securityReq.put("firstName", request.getFirstName());
         securityReq.put("lastName", request.getLastName());
         securityReq.put("email", request.getEmail());
         securityReq.put("password", request.getPassword());
-        securityReq.put("role", Collections.singleton((request.getRole() != null) ? request.getRole().name() : "LIVREUR"));
+        securityReq.put("role", Collections.singleton(request.getRole().name()));
 
-        Map<String, Object> securityResponse = securityClient.createAccount(securityReq);
+        // 🔥 Set firstLogin and active based on creator
+        securityReq.put("firstLogin", isDirectAdminCreation);
+        securityReq.put("active", isDirectAdminCreation);
+
+        Map<String, Object> securityResponse = securityClient.registerAccount(securityReq);
         Integer generatedUserId = (Integer) securityResponse.get("id");
-        if (generatedUserId == null) generatedUserId = (Integer) securityResponse.get("userId");
 
+        // 2. Local Profile Creation
         UserProfile profile = mapper.toEntity(request);
         profile.setUserId(generatedUserId);
-
         if (request.getPassword() != null) {
             profile.setPassword(passwordEncoder.encode(request.getPassword()));
         }
-
         UserProfile savedProfile = repository.save(profile);
 
-        Map<String, Object> eventData = new HashMap<>();
-        eventData.put("email", request.getEmail());
-        eventData.put("password", request.getPassword()); // الباسورد اللي غيوصل للـ Client
-        eventData.put("firstName", request.getFirstName());
+        // 3. Event Handling
+        if (!isDirectAdminCreation) {
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("email", request.getEmail());
+            eventData.put("type", "NEW_SIGNUP_REQUEST");
+            eventData.put("role", request.getRole().name());
+            eventData.put("userId", generatedUserId);
+            userEventProducer.sendUserCreatedEvent(eventData);
+        }
 
-        userEventProducer.sendUserCreatedEvent(eventData);
         return mapper.toDTO(savedProfile);
     }
 
@@ -185,6 +199,60 @@ public class UserProfileServiceImpl implements UserProfileService {
         return repository.findByZone(zoneId).stream()
                 .map(mapper::toDTO)
                 .toList();
+    }
+
+    // زيدي هاد الميثود داخل UserProfileServiceImpl
+
+    @Override
+    public UserResponseDTO activateUser(Integer profileId) {
+        try {
+            System.out.println("🔍 Activating user with profileId: " + profileId);
+
+            // 1. جيبي البروفايل من الداتابيز ديال Users_Service
+            UserProfile profile = repository.findById(profileId)
+                    .orElseThrow(() -> new NoSuchElementException("Profil non trouvé ID: " + profileId));
+
+            System.out.println("📧 User found: " + profile.getEmail() + ", Security userId: " + profile.getUserId());
+
+            // 2. تفعيل الحساب في Security Service عبر Feign
+            Map<String, Boolean> statusReq = new HashMap<>();
+            statusReq.put("active", true);
+
+            try {
+                securityClient.updateStatus(profile.getUserId(), statusReq);
+                System.out.println("✅ User activated in Security Service: " + profile.getUserId());
+            } catch (Exception e) {
+                System.err.println("❌ Feign error: " + e.getMessage());
+                throw new RuntimeException("Erreur de communication avec Security Service: " + e.getMessage());
+            }
+
+            // 3. إرسال Event لـ Kafka (بكل المعلومات)
+            Map<String, Object> eventData = new HashMap<>();
+            eventData.put("email", profile.getEmail());
+            eventData.put("firstName", profile.getFirstName());
+            eventData.put("lastName", profile.getLastName());
+            eventData.put("type", "ACCOUNT_ACTIVATED");
+            eventData.put("role", profile.getRole().name());
+            eventData.put("userId", profile.getUserId());
+
+            try {
+                userEventProducer.sendUserCreatedEvent(eventData);
+                System.out.println("✅ Event sent to Kafka for: " + profile.getEmail());
+            } catch (Exception e) {
+                System.err.println("⚠️ Kafka error (non-blocking): " + e.getMessage());
+            }
+
+            System.out.println("✅ Compte activé pour: " + profile.getEmail());
+
+            return mapper.toDTO(profile);
+
+        } catch (NoSuchElementException e) {
+            throw e;
+        } catch (Exception e) {
+            System.err.println("❌ Error in activateUser: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Erreur lors de l'activation: " + e.getMessage());
+        }
     }
 
 }

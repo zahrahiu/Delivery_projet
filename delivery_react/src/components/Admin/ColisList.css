@@ -1,0 +1,276 @@
+/* Layout principal */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #f5f7fb;
+}
+
+.main-layout {
+    display: flex;
+    flex: 1;
+}
+
+.content-area {
+    flex: 1;
+    margin-left: 80px;
+    overflow-x: auto;
+}
+
+/* Dark theme */
+.dark-theme {
+    background: #1a1a2e;
+}
+
+.dark-theme .content-area {
+    background: #1a1a2e;
+}
+
+.dark-theme .colis-list-container {
+    background: #1a1a2e;
+}
+
+.dark-theme .colis-list-header h2 {
+    color: white;
+}
+
+.dark-theme .search-input-group input {
+    background: #2d2d44;
+    border-color: #3d3d5c;
+    color: white;
+}
+
+.dark-theme .colis-table-wrapper {
+    background: #16213e;
+}
+
+.dark-theme .colis-table th {
+    background: #1a1a2e;
+    color: #aaa;
+    border-bottom-color: #2d2d44;
+}
+
+.dark-theme .colis-table td {
+    color: #ddd;
+    border-bottom-color: #2d2d44;
+}
+
+.dark-theme .colis-table tr:hover {
+    background: #1a1a2e;
+}
+
+.dark-theme .page-btn {
+    background: #2d2d44;
+    border-color: #3d3d5c;
+    color: white;
+}
+
+.dark-theme .page-btn.active {
+    background: #7367f0;
+}
+
+.dark-theme .no-data {
+    color: #aaa;
+}
+
+/* باقي الـ CSS كما هو */
+.colis-list-container {
+    padding: 30px;
+    background: #f5f7fb;
+    min-height: calc(100vh - 70px);
+}
+
+.colis-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.colis-list-header h2 {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #1a2c3e;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.search-bar-wrapper {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.search-input-group {
+    flex: 1;
+    position: relative;
+    min-width: 250px;
+}
+
+.search-icon-input {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 14px;
+}
+
+.search-input-group input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.search-input-group input:focus {
+    outline: none;
+    border-color: #203339;
+    box-shadow: 0 0 0 3px rgba(115, 103, 240, 0.1);
+}
+
+.colis-table-wrapper {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    overflow-x: auto;
+}
+
+.colis-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.colis-table th {
+    padding: 16px 20px;
+    text-align: left;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #edf2f7;
+}
+
+.colis-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #edf2f7;
+    color: #2d3748;
+}
+
+.colis-table tr:hover {
+    background: #f8f9ff;
+}
+
+.tracking-code {
+    font-family: monospace;
+    font-weight: bold;
+    color: #3b4e61;
+    background: #f0efff;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.livreur-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.delivered {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-badge.in-transit {
+    background: #fff8e1;
+    color: #f57c00;
+}
+
+.status-badge.pending {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-badge.assigned {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #7367f0;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    background: #5a4fcf;
+    transform: translateY(-2px);
+}
+
+.no-data {
+    text-align: center;
+    padding: 60px;
+    color: #999;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.page-btn {
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.page-btn.active {
+    background: #3b4e61;
+    color: white;
+    border-color: #3b4e61;
+}
+
+.page-btn:hover:not(.active) {
+    background: #f0efff;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.loader {
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+    color: #3b4e61;
+}

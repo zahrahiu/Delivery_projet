@@ -38,8 +38,9 @@ public class UserMapper {
         response.setActive(user.isActive());
         response.setCreatedAt(user.getCreatedAt());
         response.setUpdatedAt(user.getUpdatedAt());
-
+        response.setFirstLogin(user.isFirstLogin()); // هادي هي الساروت ديال الـ Popup
         Set<String> roles = new HashSet<>();
+
         if (user.getRoles() != null && !user.getRoles().isEmpty()) {
             for (Role role : user.getRoles()) {
                 roles.add(role.getName());

@@ -4,32 +4,100 @@ import { FaUser, FaLock } from "react-icons/fa";
 import heroImage from "../../assets/QribLik_LOGO.png";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from 'sweetalert2';
 
 const Login: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmNewPassword, setConfirmNewPassword] = useState("");
+    const [tempToken, setTempToken] = useState("");
+    const [tempUserId, setTempUserId] = useState("");
     const navigate = useNavigate();
+
+    const handleChangePassword = async () => {
+        if (newPassword !== confirmNewPassword) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: 'Les mots de passe ne correspondent pas',
+                confirmButtonColor: '#667eea'
+            });
+            return;
+        }
+
+        if (newPassword.length < 6) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Mot de passe trop court',
+                text: 'Minimum 6 caractères',
+                confirmButtonColor: '#667eea'
+            });
+            return;
+        }
+
+        try {
+            // Appel API pour changer le password
+            await axios.patch(
+                `http://localhost:8888/service-security/v1/users/${tempUserId}/change-password`,
+                { password: newPassword },
+                {
+                    headers: {
+                        Authorization: `Bearer ${tempToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            Swal.fire({
+                icon: 'success',
+                title: '✅ Mot de passe modifié',
+                text: 'Veuillez vous reconnecter avec votre nouveau mot de passe',
+                confirmButtonColor: '#667eea'
+            });
+
+            setShowChangePasswordModal(false);
+            localStorage.removeItem("token");
+            setEmail("");
+            setPassword("");
+
+        } catch (err: any) {
+            console.error("Error changing password:", err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur',
+                text: err.response?.data?.message || "Impossible de changer le mot de passe",
+                confirmButtonColor: '#667eea'
+            });
+        }
+    };
 
     const handleLogin = async () => {
         try {
             const res = await axios.post("http://localhost:8888/service-security/v1/users/login", {
-                email,
-                password
+                email: email.trim(),
+                password: password.trim()
             });
 
-            const { accessToken } = res.data;
+            const { accessToken, firstLogin, id } = res.data;  // 🔥 استعمل id بدل userId
 
-            // تخزين الـ token
             localStorage.setItem("token", accessToken);
 
-            // Decode JWT باش نعرفو الـ roles
+            if (firstLogin === true) {
+                setTempToken(accessToken);
+                setTempUserId(id);  // 🔥 استعمل id
+                setShowChangePasswordModal(true);
+                return;
+            }
+
+            // Decode JWT
             const base64Url = accessToken.split(".")[1];
             const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
             const payload = JSON.parse(window.atob(base64));
 
             const userRoles = payload.authorities || payload.roles || [];
-
             const rolesStr = JSON.stringify(userRoles).toUpperCase();
 
             if (rolesStr.includes("ADMIN")) {
@@ -45,15 +113,64 @@ const Login: React.FC = () => {
         } catch (err: any) {
             console.error("Login Error:", err);
             if (err.response) {
-                alert(`Erreur: ${err.response.data.message || "Identifiants incorrects"}`);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: err.response.data.message || "Identifiants incorrects",
+                    confirmButtonColor: '#667eea'
+                });
             } else {
-                alert("Impossible de contacter le serveur. Vérifiez le Gateway (8888).");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erreur',
+                    text: "Impossible de contacter le serveur",
+                    confirmButtonColor: '#667eea'
+                });
             }
         }
     };
-
     return (
         <div className="login-card-container">
+            {/* Modal pour changer le mot de passe */}
+            {showChangePasswordModal && (
+                <div className="modal-overlay" onClick={() => {}}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+                        <div className="modal-header">
+                            <h3>🔐 Changer votre mot de passe</h3>
+                            <button className="close-modal" onClick={() => setShowChangePasswordModal(false)}>✕</button>
+                        </div>
+                        <div className="modal-body">
+                            <p style={{ marginBottom: '20px', color: '#666' }}>
+                                Ceci est votre première connexion. Veuillez définir un nouveau mot de passe.
+                            </p>
+                            <div className="input-group">
+                                <FaLock className="icon" />
+                                <input
+                                    type="password"
+                                    placeholder="Nouveau mot de passe"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                />
+                            </div>
+                            <div className="input-group">
+                                <FaLock className="icon" />
+                                <input
+                                    type="password"
+                                    placeholder="Confirmer le mot de passe"
+                                    value={confirmNewPassword}
+                                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-secondary" onClick={() => setShowChangePasswordModal(false)}>Annuler</button>
+                            <button className="btn-primary" onClick={handleChangePassword}>Changer le mot de passe</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Reste du formulaire login... */}
             <nav className="navbar">
                 <div className="nav-container">
                     <div className="logo-area">
@@ -68,7 +185,6 @@ const Login: React.FC = () => {
             </nav>
 
             <div className="login-card">
-                {/* Left Side - Login */}
                 <div className="login-left">
                     <h2>Bon retour !</h2>
                     <p>Connectez-vous pour suivre vos livraisons et gérer vos commandes facilement.</p>
@@ -106,7 +222,6 @@ const Login: React.FC = () => {
                     </a>
                 </div>
 
-                {/* Right Side - Signup */}
                 <div className="login-right">
                     <h2>Nouveau ici ?</h2>
                     <p>
@@ -117,7 +232,6 @@ const Login: React.FC = () => {
                 </div>
             </div>
 
-            {/* Circles Background */}
             {[1, 2, 3, 4, 9, 12, 20].map((num) => (
                 <div key={num} className={`circle circle-${num}`}></div>
             ))}

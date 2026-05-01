@@ -1320,3 +1320,691 @@ input:checked + .slider:before { transform: translateX(14px); }
     text-align: center;
 
 }
+
+/* Améliorations pour DispatchersTab */
+.search-bar-container {
+    margin-bottom: 20px;
+}
+
+.search-bar-container input {
+    transition: all 0.3s ease;
+}
+
+.search-bar-container input:focus {
+    border-color: #7367f0;
+    box-shadow: 0 0 0 3px rgba(115, 103, 240, 0.1);
+}
+
+.zone-badge {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    color: #2e7d32;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.icon-view { color: #2196f3; cursor: pointer; font-size: 18px; transition: transform 0.2s; }
+.icon-edit { color: #ff9800; cursor: pointer; font-size: 18px; transition: transform 0.2s; }
+.icon-delete { color: #f44336; cursor: pointer; font-size: 18px; transition: transform 0.2s; }
+
+.icon-view:hover, .icon-edit:hover, .icon-delete:hover {
+    transform: scale(1.1);
+}
+
+/* Modal amélioré */
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 500px;
+    max-width: 90%;
+    padding: 0;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.modal-header h3 {
+    margin: 0;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-body p {
+    margin: 8px 0;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.modal-footer {
+    padding: 15px 25px;
+    border-top: 1px solid #eee;
+}
+
+/* ==================== VillesTab & ZonesTab Styles ==================== */
+
+/* Container */
+.tab-content-container {
+    animation: fadeIn 0.4s ease;
+}
+
+/* Header Actions */
+.tab-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.search-input-v2 {
+    padding: 12px 18px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 14px;
+    width: 280px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.search-input-v2:focus {
+    outline: none;
+    border-color: #7367f0;
+    box-shadow: 0 0 0 3px rgba(115, 103, 240, 0.1);
+}
+
+.add-main-btn {
+    background: linear-gradient(135deg, #7367f0, #5e4ee0);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(115, 103, 240, 0.2);
+}
+
+.add-main-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(115, 103, 240, 0.3);
+}
+
+/* Table Wrapper */
+.custom-table-wrapper {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.modern-table th {
+    padding: 16px 20px;
+    text-align: left;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #edf2f7;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.modern-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid #edf2f7;
+    color: #2d3748;
+    font-size: 14px;
+}
+
+.modern-table tr:hover {
+    background: #f8f9ff;
+}
+
+.bold-text {
+    font-weight: 600;
+    color: #7367f0;
+    font-family: monospace;
+}
+
+.price-tag {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.zone-badge {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.actions-cell {
+    text-align: center;
+}
+
+.icon-edit-btn,
+.icon-delete-btn {
+    font-size: 18px;
+    transition: transform 0.2s;
+}
+
+.icon-edit-btn:hover,
+.icon-delete-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-card {
+    background: white;
+    border-radius: 24px;
+    width: 500px;
+    max-width: 90%;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+}
+
+.modal-header-v2 {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header-v2 h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.close-icon {
+    cursor: pointer;
+    font-size: 20px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.close-icon:hover {
+    opacity: 1;
+}
+
+.modal-body-v2 {
+    padding: 25px;
+}
+
+.input-grid-v2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.input-group-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group-v2.full-width {
+    grid-column: span 2;
+}
+
+.input-group-v2 label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.input-group-v2 input {
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.input-group-v2 input:focus {
+    outline: none;
+    border-color: #7367f0;
+    box-shadow: 0 0 0 3px rgba(115, 103, 240, 0.1);
+}
+
+.modal-footer-v2 {
+    padding: 20px 25px;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-cancel {
+    padding: 10px 20px;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #f5f5f5;
+}
+
+.btn-confirm {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #7367f0, #5e4ee0);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(115, 103, 240, 0.3);
+}
+
+/* ZonesTab Specific */
+.main-table-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+}
+
+.selected-row {
+    background: #f0efff !important;
+    border-left: 3px solid #7367f0 !important;
+}
+
+.more-badge {
+    background: #e8eaf6;
+    color: #3949ab;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.more-badge:hover {
+    background: #c5cae9;
+}
+
+.villes-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    border: 1px solid #e0e0e0;
+}
+
+.popover-header {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.popover-body {
+    padding: 8px;
+}
+
+.popover-item {
+    padding: 8px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.popover-item:hover {
+    background: #f5f5f5;
+}
+
+/* Small Tables */
+.small-table-container {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #edf2f7;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.small-table-container .custom-table {
+    margin: 0;
+}
+
+.small-table-container td {
+    padding: 12px 16px;
+}
+
+.cell-flex {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sub-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dark Theme Support */
+.dark-theme .custom-table-wrapper,
+.dark-theme .main-table-card,
+.dark-theme .small-table-container {
+    background: #1a1a2e;
+}
+
+.dark-theme .modern-table th,
+.dark-theme .custom-table th {
+    background: #16213e;
+    color: #aaa;
+    border-bottom-color: #2d2d44;
+}
+
+.dark-theme .modern-table td,
+.dark-theme .custom-table td {
+    color: #ddd;
+    border-bottom-color: #2d2d44;
+}
+
+.dark-theme .modern-table tr:hover,
+.dark-theme .custom-table tr:hover {
+    background: #1a1a2e;
+}
+
+.dark-theme .search-input-v2 {
+    background: #2d2d44;
+    border-color: #3d3d5c;
+    color: white;
+}
+
+.dark-theme .modal-card {
+    background: #1a1a2e;
+}
+
+.dark-theme .modal-header-v2 {
+    background: #16213e;
+}
+
+.dark-theme .modal-body-v2 {
+    background: #1a1a2e;
+}
+
+.dark-theme .input-group-v2 label {
+    color: #aaa;
+}
+
+.dark-theme .input-group-v2 input {
+    background: #2d2d44;
+    border-color: #3d3d5c;
+    color: white;
+}
+
+.dark-theme .modal-footer-v2 {
+    background: #16213e;
+}
+
+.dark-theme .villes-popover {
+    background: #1a1a2e;
+    border-color: #2d2d44;
+}
+
+.dark-theme .popover-header {
+    background: #16213e;
+    color: white;
+}
+
+.dark-theme .popover-item {
+    color: #ddd;
+}
+
+.dark-theme .popover-item:hover {
+    background: #2d2d44;
+}
+
+.dark-theme .selected-row {
+    background: #2d2d44 !important;
+}
+
+/* ==================== PendingUsers Table Styles ==================== */
+
+.user-table-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+
+/* Style du tableau */
+.user-table-card table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.user-table-card th {
+    padding: 16px;
+    text-align: left;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+}
+
+.user-table-card th:last-child {
+    border-right: none;
+}
+
+.user-table-card td {
+    padding: 16px;
+    border-bottom: 1px solid #edf2f7;
+    border-right: 1px solid #edf2f7;
+    vertical-align: top;
+}
+
+.user-table-card td:last-child {
+    border-right: none;
+}
+
+.user-table-card tr:hover {
+    background: #f8f9ff;
+}
+
+/* Style des badges */
+.status-badge-pending {
+    display: inline-block;
+    background: #ffebee;
+    color: #c62828;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Style des boutons dans le tableau */
+.action-btn-accept {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    margin-right: 8px;
+}
+
+.action-btn-accept:hover {
+    background: #43a047;
+    transform: scale(1.02);
+}
+
+.action-btn-reject {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.action-btn-reject:hover {
+    background: #e53935;
+    transform: scale(1.02);
+}
+
+.action-btn-accept:disabled,
+.action-btn-reject:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Style des info blocks dans le tableau */
+.info-block {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.info-block:last-child {
+    margin-bottom: 0;
+}
+
+.info-icon {
+    color: #888;
+    font-size: 14px;
+    min-width: 18px;
+    margin-top: 2px;
+}
+
+.info-text {
+    color: #555;
+    font-size: 14px;
+    word-break: break-word;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-table-card {
+        overflow-x: auto;
+    }
+
+    .user-table-card th,
+    .user-table-card td {
+        padding: 12px;
+    }
+}

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from 'sweetalert2';
-import { FaArrowLeft, FaSpinner } from "react-icons/fa";
-import "./AddColisForm.css";
+import { FaArrowLeft, FaSpinner, FaSave, FaTruck, FaMapMarkerAlt, FaUserEdit } from "react-icons/fa";
+import "./AddColisForm.css"; // استعملي نفس الـ CSS باش يبقاو متناسقين
 
 interface UpdateColisProps {
     parcelToEdit: any;
@@ -14,63 +14,59 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
     const [loading, setLoading] = useState(false);
     const token = localStorage.getItem("token");
 
-    // --- التعديل: استخدام الـ Gateway لجميع الخدمات ---
     const GATEWAY_URL = "http://localhost:8888";
-
-    // 1. خدمة المناطق (Tarif-Zone-Service)
-    const ZONES_API = `${GATEWAY_URL}/tarif-zone-service/api/zones`;
-
-    // 2. خدمة الطرود (Parcel-Service)
+    const TARIFS_API = `${GATEWAY_URL}/tarif-zone-service/api/tarifs`;
     const PARCELS_API = `${GATEWAY_URL}/parcel-service/api/parcels/${parcelToEdit.id}`;
-
-    // 3. خدمة المستخدمين (Users-Service) لجلب السائقين
     const DRIVERS_API = `${GATEWAY_URL}/users-service/api/profiles/drivers/zone`;
 
     const [formData, setFormData] = useState({
-        weight: parcelToEdit.weight ?? "",
-        deliveryAddress: parcelToEdit.deliveryAddress ?? "",
-        zoneId: parcelToEdit.zoneId ?? parcelToEdit.zone?.id ?? "",
-        senderId: parcelToEdit.senderId ?? "",
-        senderName: parcelToEdit.senderName ?? "",
-        senderPhone: parcelToEdit.senderPhone ?? parcelToEdit.clientPhone ?? "",
-        clientEmail: parcelToEdit.clientEmail ?? ""
+        weight: parcelToEdit.weight || "",
+        deliveryAddress: parcelToEdit.deliveryAddress || "",
+        zoneId: parcelToEdit.zoneId || "",
+        senderId: parcelToEdit.senderId || "",
+        senderName: parcelToEdit.senderName || "",
+        senderPhone: parcelToEdit.senderPhone || "",
+        clientEmail: parcelToEdit.clientEmail || parcelToEdit.senderEmail || "",
+        status: parcelToEdit.status || "PENDING"
     });
 
-    const [zones, setZones] = useState<any[]>([]);
+    const [villes, setVilles] = useState<any[]>([]);
     const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
-    const [selectedDriver, setSelectedDriver] = useState(parcelToEdit.driverId ?? parcelToEdit.driver?.userId ?? "");
+    const [selectedDriver, setSelectedDriver] = useState(parcelToEdit.assignedLivreurId || "");
 
     const getHeaders = () => ({ headers: { Authorization: `Bearer ${token}` } });
 
+    // 1. جلب المدن والسائقين عند البداية
     useEffect(() => {
-        const initializeView = async () => {
+        const fetchInitialData = async () => {
             try {
-                // جلب المناطق عبر الـ Gateway
-                const resZones = await axios.get(ZONES_API, getHeaders());
-                setZones(Array.isArray(resZones.data) ? resZones.data : []);
+                // جلب المدن
+                const resVilles = await axios.get(TARIFS_API, getHeaders());
+                setVilles(Array.isArray(resVilles.data) ? resVilles.data : []);
 
-                // جلب السائقين للمنطقة الحالية
-                const zoneIdToUse = parcelToEdit.zoneId || parcelToEdit.zone?.id;
-                if (zoneIdToUse) {
-                    const resDrivers = await axios.get(`${DRIVERS_API}/${zoneIdToUse}`, getHeaders());
+                // جلب السائقين للمنطقة الحالية للطرد
+                if (formData.zoneId) {
+                    const resDrivers = await axios.get(`${DRIVERS_API}/${formData.zoneId}`, getHeaders());
                     setAvailableDrivers(resDrivers.data);
                 }
             } catch (err) {
-                console.error("Erreur d'initialisation:", err);
+                console.error("Erreur initialisation Update:", err);
             }
         };
-        initializeView();
-    }, [parcelToEdit]);
+        fetchInitialData();
+    }, [parcelToEdit.id]);
 
-    const handleZoneChange = async (zoneId: string) => {
-        setFormData({ ...formData, zoneId });
-        setAvailableDrivers([]);
-        setSelectedDriver("");
-        if (zoneId) {
+    const handleVilleChange = async (villeId: string) => {
+        const selectedVille = villes.find(v => v.id.toString() === villeId);
+        if (selectedVille) {
+            const zId = selectedVille.zone_id || selectedVille.zoneId;
+            setFormData({ ...formData, zoneId: zId, deliveryAddress: selectedVille.ville });
+
+            // تحديث قائمة السائقين حسب المنطقة الجديدة
             try {
-                // تحديث قائمة السائقين عند تغيير المنطقة
-                const res = await axios.get(`${DRIVERS_API}/${zoneId}`, getHeaders());
+                const res = await axios.get(`${DRIVERS_API}/${zId}`, getHeaders());
                 setAvailableDrivers(res.data);
+                setSelectedDriver(""); // مسح السائق القديم حيت المنطقة تبدلات
             } catch (err) { console.error(err); }
         }
     };
@@ -78,18 +74,26 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const payload = {
-            ...formData,
-            driverId: selectedDriver || null,
-            status: selectedDriver ? "ASSIGNED" : parcelToEdit.status
-        };
+
         try {
-            // تحديث الطرد عبر الـ Gateway
-            await axios.put(PARCELS_API, payload, getHeaders());
-            Swal.fire({ icon: 'success', title: 'Modifié ! ✅', showConfirmButton: false, timer: 1500 });
+            // 1. تحديث البيانات الأساسية (Weight, Address...)
+            await axios.put(PARCELS_API, formData, getHeaders());
+
+            // 2. تحديث الموصل (إلا تبدل أو تختار)
+            if (selectedDriver) {
+                await axios.patch(`${GATEWAY_URL}/parcel-service/api/parcels/${parcelToEdit.id}/assign/${selectedDriver}`, {}, getHeaders());
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Mise à jour réussie !',
+                text: `Le colis ${parcelToEdit.trackingNumber} a été modifié.`,
+                timer: 2000,
+                showConfirmButton: false
+            });
             onUpdateSuccess();
         } catch (err) {
-            Swal.fire('Erreur', 'Modification échouée', 'error');
+            Swal.fire('Erreur', 'Impossible de modifier le colis', 'error');
         } finally {
             setLoading(false);
         }
@@ -99,70 +103,85 @@ const UpdateColisForm: React.FC<UpdateColisProps> = ({ parcelToEdit, onCancel, o
         <div className="add-colis-embedded">
             <div className="form-header-simple">
                 <button className="btn-back-link" onClick={onCancel}>
-                    <FaArrowLeft /> Retour
+                    <FaArrowLeft /> Annuler
                 </button>
-                <h3>✏️ Modification du Colis #{parcelToEdit.trackingNumber || parcelToEdit.id}</h3>
+                <h3>✏️ Modifier le Colis <span style={{color: '#3182ce'}}>{parcelToEdit.trackingNumber}</span></h3>
             </div>
 
             <div className="form-card-container">
                 <form onSubmit={handleSubmit} className="clean-form">
-                    {/* ... باقي الـ JSX يبقى كما هو ... */}
+
+                    {/* القسم 1: المرسل */}
                     <section className="form-section">
                         <div className="input-row">
                             <div className="input-field">
-                                <label>Nom du Magasin / Expéditeur</label>
-                                <input type="text" value={formData.senderName} onChange={(e) => setFormData({...formData, senderName: e.target.value})} />
+                                <label>Nom de l'Expéditeur</label>
+                                <input type="text" required value={formData.senderName} onChange={(e) => setFormData({...formData, senderName: e.target.value})} />
                             </div>
                             <div className="input-field">
-                                <label>ID Interne</label>
-                                <input type="number" value={formData.senderId} onChange={(e) => setFormData({...formData, senderId: e.target.value})} />
+                                <label>ID Expéditeur</label>
+                                <input type="number" required value={formData.senderId} onChange={(e) => setFormData({...formData, senderId: e.target.value})} />
                             </div>
                         </div>
                     </section>
 
+                    {/* القسم 2: الوجهة والموصل */}
                     <section className="form-section">
                         <div className="input-row">
                             <div className="input-field">
-                                <label>Zone actuelle</label>
-                                <select value={formData.zoneId} onChange={(e) => handleZoneChange(e.target.value)}>
-                                    <option value="">Sélectionner...</option>
-                                    {zones.map(z => <option key={z.id} value={z.id}>{z.nom_zone || z.name}</option>)}
+                                <label>Ville / Zone</label>
+                                <select required onChange={(e) => handleVilleChange(e.target.value)}>
+                                    <option value="">-- Changer la ville --</option>
+                                    {villes.map(v => (
+                                        <option key={v.id} value={v.id} selected={v.ville === formData.deliveryAddress}>
+                                            {v.ville}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="input-field">
-                                <label>Livreur affecté</label>
+                                <label><FaTruck style={{marginRight: '5px'}}/> Livreur</label>
                                 <select value={selectedDriver} onChange={(e) => setSelectedDriver(e.target.value)}>
-                                    <option value="">{availableDrivers.length > 0 ? "Modifier..." : "Chargement / Aucun"}</option>
-                                    {availableDrivers.map(d => <option key={d.userId} value={d.userId}>{d.firstName} {d.lastName}</option>)}
+                                    <option value="">-- Non assigné --</option>
+                                    {availableDrivers.map(d => (
+                                        <option key={d.userId} value={d.userId}>
+                                            {d.firstName} {d.lastName}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
-                        <div className="input-field full-width">
-                            <label>Adresse de livraison complète</label>
-                            <input type="text" value={formData.deliveryAddress} onChange={(e) => setFormData({...formData, deliveryAddress: e.target.value})} />
-                        </div>
                     </section>
 
+                    {/* القسم 3: تفاصيل الطرد */}
                     <section className="form-section">
                         <div className="input-row">
                             <div className="input-field">
                                 <label>Poids (kg)</label>
-                                <input type="number" step="0.1" value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} />
+                                <input type="number" step="0.1" required value={formData.weight} onChange={(e) => setFormData({...formData, weight: e.target.value})} />
                             </div>
                             <div className="input-field">
-                                <label>Tél. Client</label>
-                                <input type="text" value={formData.senderPhone} onChange={(e) => setFormData({...formData, senderPhone: e.target.value})} />
+                                <label>État du colis</label>
+                                <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                                    <option value="PENDING">En attente</option>
+                                    <option value="ASSIGNED">Assigné</option>
+                                    <option value="IN_TRANSIT">En cours</option>
+                                    <option value="DELIVERED">Livré</option>
+                                    <option value="CANCELLED">Annulé</option>
+                                </select>
                             </div>
                         </div>
-                        <div className="input-field full-width">
-                            <label>Email Client</label>
-                            <input type="email" value={formData.clientEmail} onChange={(e) => setFormData({...formData, clientEmail: e.target.value})} />
+                        <div className="input-row">
+                            <div className="input-field full-width">
+                                <label>Email Client (Notification)</label>
+                                <input type="email" required value={formData.clientEmail} onChange={(e) => setFormData({...formData, clientEmail: e.target.value})} />
+                            </div>
                         </div>
                     </section>
 
                     <div className="form-footer">
                         <button type="submit" className="btn-submit-full" disabled={loading}>
-                            {loading ? <FaSpinner className="spinner" /> : "Enregistrer les modifications"}
+                            {loading ? <FaSpinner className="spinner" /> : "Sauvegarder les modifications"}
                         </button>
                     </div>
                 </form>

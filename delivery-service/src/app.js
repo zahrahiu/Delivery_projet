@@ -1,23 +1,61 @@
 require('dotenv').config();
+
 const express = require('express');
-const Eureka = require('eureka-js-client').Eureka; // <--- زيدي هادي
+const cors = require('cors');
+const { Eureka } = require('eureka-js-client');
+
 const startConsumer = require('./kafka/consumer');
 const { initDb } = require('./config/db');
-const { assignDelivery } = require('./controllers/deliveryController');
-const authMiddleware = require("./middlewares/auth");
-const hasRole = require("./middlewares/hasRole");
+
+const deliveryRoutes = require('./routes/deliveryRoutes');
+
+/* ===================== Swagger ===================== */
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
-const cors = require('cors');
 app.use(cors());
 app.use(express.json());
 
+const PORT = process.env.PORT || 3001;
 
-const PORT = 3001;
+/* ===================== Swagger Config ===================== */
+const swaggerOptions = {
+    definition: {
+        openapi: "3.0.0",
+        info: {
+            title: "Delivery Service API",
+            version: "1.0.0",
+            description: "Microservice Delivery (Eureka + Kafka + DB)"
+        },
+        servers: [
+            {
+                url: `http://localhost:${PORT}`
+            }
+        ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT"
+                }
+            }
+        }
+    },
+    apis: ["./src/routes/*.js"]
+};
 
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+/* ===================== Routes ===================== */
+app.use('/api/deliveries', deliveryRoutes);
+
+/* ===================== Eureka ===================== */
 const client = new Eureka({
     instance: {
-        app: 'delivery-service', // تبديل لـ ناقص
+        app: 'delivery-service',
         instanceId: `delivery-service:${PORT}`,
         hostName: 'localhost',
         ipAddr: '127.0.0.1',
@@ -32,30 +70,37 @@ const client = new Eureka({
             name: 'MyOwn',
         },
     },
-    eureka: { host: 'localhost', port: 8761, servicePath: '/eureka/apps/' },
+    eureka: {
+        host: 'localhost',
+        port: 8761,
+        servicePath: '/eureka/apps/',
+    },
 });
 
-// 2. الـ Routes (بـ السيكوريتي ديالهم)
-app.post('/deliveries/:id/assign',
-    authMiddleware,
-    hasRole('ROLE_DISPATCHER'),
-    assignDelivery
-);
+/* ===================== START SYSTEM ===================== */
+initDb()
+    .then(() => {
 
-// 3. تشغيل الـ Database و Kafka و Eureka
-initDb().then(() => {
-    startConsumer().catch(console.error);
+        // Kafka Consumer
+        startConsumer().catch(err =>
+            console.error("❌ Kafka Error:", err)
+        );
 
-    app.listen(PORT, () => {
-        console.log(`🚀 Delivery Service running on port ${PORT}`);
+        // Start server
+        app.listen(PORT, () => {
+            console.log(`🚀 Delivery Service running on port ${PORT}`);
 
-        // تسجيل السيرفيس في Eureka
-        client.start((error) => {
-            if (error) {
-                console.error('❌ Erreur Eureka (Delivery):', error);
-            } else {
-                console.log('✅ Delivery Service enregistré sur Eureka !');
-            }
+            // Eureka register
+            client.start((error) => {
+                if (error) {
+                    console.error('❌ Eureka Error:', error);
+                } else {
+                    console.log('✅ Delivery Service registered on Eureka');
+                }
+            });
         });
+
+    })
+    .catch(err => {
+        console.error("❌ DB Init Error:", err);
     });
-});

@@ -6,6 +6,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -14,22 +17,25 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // الحصول على المسار المطلق للمشروع
         String projectPath = System.getProperty("user.dir");
-        String fullPath = "file:" + projectPath + "/" + uploadDir;
+        Path uploadPath = Paths.get(projectPath, uploadDir);
+        String absolutePath = uploadPath.toAbsolutePath().toString();
 
-        if (!fullPath.endsWith("/") && !fullPath.endsWith("\\")) {
-            fullPath += "/";
-        }
+        // التأكد من وجود الشرطة في النهاية
+        String location = "file:" + absolutePath + (absolutePath.endsWith("/") || absolutePath.endsWith("\\") ? "" : "/");
+
+        System.out.println("========================================");
+        System.out.println("📁 Project path: " + projectPath);
+        System.out.println("📁 Upload directory: " + uploadDir);
+        System.out.println("📁 Absolute path: " + absolutePath);
+        System.out.println("📁 Serving images from: " + location);
+        System.out.println("========================================");
 
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(fullPath)
+                .addResourceLocations(location)
                 .setCachePeriod(3600)
                 .resourceChain(true);
-
-        System.out.println("✅ Serving uploads from: " + fullPath);
-        System.out.println("✅ Project path: " + projectPath);
-        System.setProperty("spring.resources.static-locations", "file:./Users_Service/uploads/");
-
     }
 
     @Override

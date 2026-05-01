@@ -18,12 +18,11 @@
     width: 100%;
     max-width: 800px;
     border-radius: 24px;
-    padding: 50px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
     border: 1px solid #eef2f6;
 }
 
-/* تعديل الـ Header ليصبح أفقي */
 .profile-card-header {
     margin-bottom: 40px;
     padding-bottom: 30px;
@@ -33,76 +32,51 @@
 .profile-header-main {
     display: flex;
     align-items: center;
-    gap: 30px; /* المسافة بين الصورة والمعلومات */
-    text-align: left; /* نغير المحاذاة لليسار */
+    gap: 30px;
+    text-align: left;
 }
 
 .user-primary-info {
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* المعلومات تبدا من اليسار */
+    align-items: flex-start;
     gap: 10px;
 }
 
 .profile-card-header h1 {
-    font-size: 2.2rem; /* كبرنا الخط شوية */
+    font-size: 2rem;
     color: #1e293b;
     margin: 0;
-    font-weight: 800;
+    font-weight: 700;
 }
 
-.user-location-hint {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #64748b;
-    font-size: 0.95rem;
-    margin-top: 5px;
-}
-
-/* تعديل حجم الصورة لتناسب التصميم الأفقي */
 .profile-avatar-img {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
-    border: 6px solid #fff;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    border: 4px solid #fff;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-/* لضمان التناسق في الهواتف (يرجع عمودي) */
-@media (max-width: 640px) {
-    .profile-header-main {
-        flex-direction: column;
-        text-align: center;
-        gap: 20px;
-    }
-
-    .user-primary-info {
-        align-items: center;
-    }
-
-    .profile-card-header h1 {
-        font-size: 1.6rem;
-    }
+.default-avatar-icon {
+    color: #cbd5e1;
 }
-
 
 .role-tag {
-    background-color: #f7cbca; /* الوردي المعتمد عندك */
+    background-color: #f7cbca;
     color: #5d6b6b;
     padding: 6px 18px;
     border-radius: 50px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.5px;
 }
 
-/* شبكة المعلومات */
 .profile-info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 30px;
+    gap: 20px;
     margin-top: 20px;
 }
 
@@ -112,7 +86,7 @@
     gap: 15px;
     padding: 15px;
     background: #fdfdfd;
-    border-radius: 15px;
+    border-radius: 16px;
     border: 1px solid #f1f5f9;
     transition: all 0.2s ease;
 }
@@ -120,15 +94,15 @@
 .info-item:hover {
     background: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
 }
 
 .info-icon-box {
     width: 45px;
     height: 45px;
-    background-color: #d5e5e5; /* المائي المعتمد عندك */
+    background-color: #eef2f6;
     color: #5d6b6b;
-    border-radius: 12px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -136,16 +110,17 @@
 }
 
 .info-text label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #94a3b8;
     text-transform: uppercase;
     font-weight: 600;
     display: block;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
 }
 
 .info-text p {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #334155;
     font-weight: 600;
     margin: 0;
@@ -155,7 +130,6 @@
     grid-column: span 2;
 }
 
-/* الأزرار */
 .profile-footer-actions {
     margin-top: 40px;
     border-top: 1px solid #f1f5f9;
@@ -168,9 +142,9 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background-color: #1e293b;
+    background-color: #3b4e61;
     color: white;
-    padding: 14px 35px;
+    padding: 12px 32px;
     border-radius: 12px;
     font-weight: 600;
     border: none;
@@ -179,12 +153,11 @@
 }
 
 .edit-profile-btn:hover {
-    background-color: #0f172a;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    background-color: #2a3a4a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* زر Retour */
 .back-btn {
     border: 1px solid #e2e8f0;
     background: white;
@@ -201,11 +174,42 @@
     color: #1e293b;
 }
 
+.loading-screen,
+.error-screen {
+    text-align: center;
+    padding: 50px;
+    font-size: 1.2rem;
+    color: #64748b;
+}
+
 @media (max-width: 640px) {
+    .profile-page-wrapper {
+        padding: 1rem;
+    }
+
+    .profile-container {
+        padding: 25px;
+    }
+
     .profile-info-grid {
         grid-template-columns: 1fr;
     }
-    .profile-container {
-        padding: 30px 20px;
+
+    .info-item.full-width {
+        grid-column: span 1;
+    }
+
+    .profile-header-main {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+
+    .user-primary-info {
+        align-items: center;
+    }
+
+    .profile-card-header h1 {
+        font-size: 1.5rem;
     }
 }

@@ -1,21 +1,21 @@
-/* Container الرئيسي */
+/* Container principal */
 .edit-section {
     padding: 2rem;
     display: flex;
     justify-content: center;
-    background-color: #f8fafc; /* خلفية خفيفة باش تبان الـ Card */
+    background-color: #f8fafc;
     min-height: 90vh;
 }
 
-/* Card ديال الفورم */
+/* Card du formulaire */
 .edit-form-card {
     background: white;
     width: 100%;
     max-width: 800px;
     padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eef2f6;
 }
 
 /* Header */
@@ -32,6 +32,7 @@
     color: #1e293b;
     font-size: 1.4rem;
     font-weight: 700;
+    margin: 0;
 }
 
 .btn-back {
@@ -42,7 +43,7 @@
     background: #f1f5f9;
     color: #475569;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -67,37 +68,45 @@
 }
 
 .avatar-edit-preview {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    object-fit: cover;
     border: 4px solid #fff;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+}
+
+.avatar-edit-preview:hover {
+    transform: scale(1.02);
 }
 
 .camera-icon-label {
     position: absolute;
     bottom: 5px;
     right: 5px;
-    background: #2563eb; /* أزرق احترافي */
+    background: #3b4e61;
     color: white;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     border: 3px solid #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: all 0.2s ease;
 }
 
 .camera-icon-label:hover {
-    background: #1d4ed8;
+    background: #2a3a4a;
     transform: scale(1.1);
 }
 
 .upload-hint {
     margin-top: 12px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #94a3b8;
 }
 
@@ -121,32 +130,38 @@
 .field-group label {
     font-weight: 600;
     color: #334155;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.field-group input, .field-group select {
+.field-group input,
+.field-group select {
     padding: 12px 15px;
     border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
     color: #1e293b;
     outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.2s ease;
+    background: #fdfdfd;
 }
 
-.field-group input:focus, .field-group select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+.field-group input:focus,
+.field-group select:focus {
+    border-color: #3b4e61;
+    box-shadow: 0 0 0 3px rgba(59, 78, 97, 0.1);
+    background: white;
 }
 
 /* Submit Button */
 .btn-update-profile {
     width: 100%;
     padding: 14px;
-    background: #1e293b; /* لون غامق فخم */
+    background: #3b4e61;
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-top: 30px;
     font-weight: 700;
     font-size: 1rem;
@@ -158,21 +173,38 @@
     transition: all 0.3s ease;
 }
 
-.btn-update-profile:hover {
-    background: #0f172a;
+.btn-update-profile:hover:not(:disabled) {
+    background: #2a3a4a;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-update-profile:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 /* Responsive */
 @media (max-width: 640px) {
+    .edit-section {
+        padding: 1rem;
+    }
+
+    .edit-form-card {
+        padding: 25px;
+    }
+
     .form-grid {
         grid-template-columns: 1fr;
     }
+
     .field-group.full-width {
         grid-column: span 1;
     }
-    .edit-form-card {
-        padding: 20px;
+
+    .form-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
     }
 }

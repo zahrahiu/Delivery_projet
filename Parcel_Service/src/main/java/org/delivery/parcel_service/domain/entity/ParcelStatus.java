@@ -5,6 +5,6 @@ public enum ParcelStatus {
     ASSIGNED,    // تزاد
     IN_TRANSIT,
     DELIVERED,
-    RETURNED,    // تزاد
+    RETURNED,// تزاد
     CANCELLED    // تزاد
 }

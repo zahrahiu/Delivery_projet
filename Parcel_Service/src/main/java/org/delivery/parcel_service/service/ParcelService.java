@@ -1,6 +1,8 @@
 package org.delivery.parcel_service.service;
 
 import org.delivery.parcel_service.domain.entity.ParcelStatus;
+import org.delivery.parcel_service.dto.ClientUpdateRequest;
+import org.delivery.parcel_service.dto.DeliveryConfirmationRequest;
 import org.delivery.parcel_service.dto.ParcelRequestDTO;
 import org.delivery.parcel_service.dto.ParcelResponseDTO;
 
@@ -16,4 +18,10 @@ public interface ParcelService {
     ParcelResponseDTO updateParcel(Long id, ParcelRequestDTO parcelRequestDTO);
     void updateStatus(Long id, ParcelStatus status);
     List<ParcelResponseDTO> getParcelsByZone(String zoneId);
+
+    ParcelResponseDTO getParcelById(Long id);
+    void confirmDelivery(Long id, DeliveryConfirmationRequest request);
+     void reportProblem(Long id, String reason);
+    void updateClientParcelInfo(Long id, ClientUpdateRequest request);
+    void cancelParcelByClient(Long id);
 }

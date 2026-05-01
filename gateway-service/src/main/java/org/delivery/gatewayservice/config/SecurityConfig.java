@@ -2,6 +2,8 @@ package org.delivery.gatewayservice.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
@@ -27,30 +29,40 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // كنسمحو لـ React (البور 3000) يقرأ البيانات
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+       // configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Access-Control-Allow-Origin", "Accept"));
         configuration.setAllowCredentials(true);
 
-        // ضروري هاد الـ Class يكون من package .reactive
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
+    // في Gateway - SecurityConfig.java
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/service-security/v1/users/login/**",
-                                "/service-security/v1/users/register/**").permitAll()
-                        .pathMatchers("/tarif-zone-service/api/tarifs/**").permitAll()
-                        .pathMatchers("/users-service/uploads/**").permitAll()
+                        // OPTIONS dyal CORS
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .pathMatchers(HttpMethod.POST, "/users-service/api/profiles/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/service-security/v1/users/register/**").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/service-security/v1/users/login/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/tarif-zone-service/api/zones/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/tarif-zone-service/api/tarifs/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/parcel-service/api/parcels/track/**").permitAll()                        .pathMatchers("/tarif-zone-service/api/tarifs/**").permitAll()
+                        .pathMatchers("/tracking-service/ws/**").permitAll()
+                        .pathMatchers(HttpMethod.PATCH, "/service-security/v1/users/*/change-password").permitAll()
+
+                                .pathMatchers("/users-service/uploads/**").authenticated()
                         .anyExchange().authenticated()
                 )
-                .oauth2ResourceServer(oauth -> oauth.jwt(org.springframework.security.config.Customizer.withDefaults()))
+                .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
                 .build();
     }
 

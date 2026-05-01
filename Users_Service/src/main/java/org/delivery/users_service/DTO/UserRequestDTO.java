@@ -4,6 +4,8 @@ package org.delivery.users_service.DTO;
 import lombok.Data;
 import org.delivery.users_service.entities.RoleType;
 
+import java.time.LocalDate;
+
 @Data
 public class UserRequestDTO {
     private String firstName;
@@ -16,7 +18,10 @@ public class UserRequestDTO {
     private String address;
     private RoleType role;
     private String vehicleType;
+    private String createdBy; // "ADMIN" أو "SIGNUP"
     private String matricule;
+    private LocalDate dateNaissance;  // 🔥 أضف هاد السطر
+
     private String permisNumber;
 
     // في UserProfile.java

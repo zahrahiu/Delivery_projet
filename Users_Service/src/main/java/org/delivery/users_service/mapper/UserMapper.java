@@ -21,6 +21,8 @@ public class UserMapper {
         entity.setZone(dto.getZone());
         entity.setAddress(dto.getAddress());
         entity.setVehicleType(dto.getVehicleType());
+        entity.setDateNaissance(dto.getDateNaissance());  // 🔥 أضف
+
         entity.setMatricule(dto.getMatricule());
         entity.setPermisNumber(dto.getPermisNumber());
         entity.setRole(dto.getRole());
@@ -44,6 +46,8 @@ public class UserMapper {
         dto.setAddress(entity.getAddress());
         dto.setVehicleType(entity.getVehicleType());
         dto.setMatricule(entity.getMatricule());
+        dto.setDateNaissance(entity.getDateNaissance());  // 🔥 أضف
+
         dto.setPermisNumber(entity.getPermisNumber());
         dto.setRole(entity.getRole());
 

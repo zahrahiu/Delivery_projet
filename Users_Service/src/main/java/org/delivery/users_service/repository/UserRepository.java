@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<UserProfile, Integer> {
     Optional<UserProfile> findByEmail(String email);  // Retourner Optional<User> pas UserResponseDTO
 
     List<UserProfile> findByZone(String zone);
+
+    boolean existsByEmailIgnoreCase(String email);
 }

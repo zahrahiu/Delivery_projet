@@ -19,6 +19,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -41,36 +43,33 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDTO createUser(UserRequestDTO request) {
-        // Vérifier si email existe déjà
         if(userRepository.existsByEmail(request.getEmail())){
-            UserResponseDTO response = new UserResponseDTO();
-            response.setEmail(request.getEmail());
-            response.setActive(false);
-            return response;
+            throw new RuntimeException("Email déjà utilisé");
         }
 
-        // Créer un nouvel utilisateur
         User user = new User();
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setActive(true);
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Assigner le rôle si fourni
-        if(request.getRole() != null && !request.getRole().isEmpty()){
-            for (String roleName : request.getRole()) {
-                Role role = roleRepository.findByName(roleName)
-                        .orElseThrow(() -> new RuntimeException("Role non trouvé: " + roleName));
-                user.getRoles().add(role);
-            }
+
+        user.setActive(request.getActive());
+        user.setFirstLogin(request.isFirstLogin());
+
+        if (request.getRole() != null) {
+            Set<Role> roles = request.getRole().stream()
+                    .map(roleName -> roleRepository.findByName(roleName)
+                            .orElseThrow(() -> new RuntimeException("Role non trouvé: " + roleName)))
+                    .collect(Collectors.toSet());
+            user.setRoles(roles);
         }
 
-        // Sauvegarder en base
-        User savedUser = userRepository.save(user);
+        return userMapper.Entity_to_DTO(userRepository.save(user));
+    }
 
-        // UTILISER LE MAPPER COMME DANS getAllUsers() POUR AVOIR LA MÊME STRUCTURE
-        return userMapper.Entity_to_DTO(savedUser);
+    private String generateRandomPassword() {
+        return java.util.UUID.randomUUID().toString().substring(0, 8);
     }
 
     @Override
