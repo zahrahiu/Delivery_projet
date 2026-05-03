@@ -2,10 +2,7 @@ package org.gym.service_security.entities;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 
@@ -13,6 +10,8 @@ import java.time.Instant;
 @Table(name = "refresh_tokens")
 @Getter
 @Setter
+@Data
+
 @NoArgsConstructor
 @AllArgsConstructor
 public class RefreshToken {

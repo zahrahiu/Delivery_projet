@@ -12,24 +12,24 @@ public class ParcelMapper {
 
 
     public Parcel toEntity(ParcelRequestDTO dto) {
-        return Parcel.builder()
-                .weight(dto.getWeight())
-                .deliveryAddress(dto.getDeliveryAddress())
-                .zoneId(dto.getZoneId())
-                .senderId(dto.getSenderId())
-                .senderName(dto.getSenderName())
-                .cityName(dto.getCityName())
-                .clientName(dto.getClientName())
-                .deliveryNotes(dto.getDeliveryNotes())
-                .signature(dto.getSignature())
-                .senderPhone(dto.getSenderPhone())
-                .latitude(dto.getLatitude())
-                .actionType(dto.getActionType())
-                .longitude(dto.getLongitude())
-                .trackingNumber(dto.getTrackingNumber())
-                .clientEmail(dto.getClientEmail()) // رديها clientEmail
-                .status(ParcelStatus.PENDING)
-                .build();
+        Parcel parcel = new Parcel(); // استعمال الـ Constructor العادي
+        parcel.setWeight(dto.getWeight());
+        parcel.setDeliveryAddress(dto.getDeliveryAddress());
+        parcel.setZoneId(dto.getZoneId());
+        parcel.setSenderId(dto.getSenderId());
+        parcel.setSenderName(dto.getSenderName());
+        parcel.setCityName(dto.getCityName());
+        parcel.setClientName(dto.getClientName());
+        parcel.setDeliveryNotes(dto.getDeliveryNotes());
+        parcel.setSignature(dto.getSignature());
+        parcel.setSenderPhone(dto.getSenderPhone());
+        parcel.setLatitude(dto.getLatitude());
+        parcel.setActionType(dto.getActionType());
+        parcel.setLongitude(dto.getLongitude());
+        parcel.setTrackingNumber(dto.getTrackingNumber());
+        parcel.setClientEmail(dto.getClientEmail());
+        parcel.setStatus(ParcelStatus.PENDING); // استعمال الـ Enum مباشرة
+        return parcel;
     }
 
     public ParcelResponseDTO toResponse(Parcel parcel) {

@@ -1,6 +1,5 @@
 package org.delivery.parcel_service.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,10 +25,15 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
-@RequiredArgsConstructor
+// @RequiredArgsConstructor  // ❌ Supprimez cette ligne
 public class SecurityConfig {
 
     private final RsaKeys rsaKeys;
+
+    // ✅ Ajoutez ce constructeur manuellement
+    public SecurityConfig(RsaKeys rsaKeys) {
+        this.rsaKeys = rsaKeys;
+    }
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -56,11 +60,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/parcels/track/**").permitAll() // ✅ هذا هو الحل
+                        .requestMatchers(HttpMethod.GET, "/api/parcels/track/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        // هنا كنعيطو لـ الـ Bean اللي صاوبنا لتحت
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 )
                 .build();
@@ -86,10 +89,7 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-
-        // حيت التوكين ديالك فيه "authorities": "ROLE_DISPATCHER"
         grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities");
-
         grantedAuthoritiesConverter.setAuthorityPrefix("");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();

@@ -1,6 +1,5 @@
 package org.delivery.parcel_service.service.impl;
 
-import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.delivery.parcel_service.domain.entity.Parcel;
 import org.delivery.parcel_service.domain.entity.ParcelStatus;
@@ -26,13 +25,19 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class ParcelServiceImpl implements ParcelService {
 
     private final ParcelRepository parcelRepository;
     private final ParcelMapper parcelMapper;
     private final ParcelEventProducer parcelEventProducer;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    public ParcelServiceImpl(ParcelRepository parcelRepository, ParcelMapper parcelMapper, ParcelEventProducer parcelEventProducer, KafkaTemplate<String, Object> kafkaTemplate) {
+        this.parcelRepository = parcelRepository;
+        this.parcelMapper = parcelMapper;
+        this.parcelEventProducer = parcelEventProducer;
+        this.kafkaTemplate = kafkaTemplate;
+    }
 
     @Override
     @Transactional

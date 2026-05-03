@@ -1,20 +1,11 @@
 package org.gym.service_security.entities;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter @Setter
 @Entity
 @Table(name = "users")
 public class User {
@@ -22,6 +13,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
     @Column(nullable = false)
     private String firstName;
 
@@ -34,12 +26,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // فـ security-service / entities / User.java
-    private boolean active = false; // هادي غتخلي الـ Admin هو اللي يـقبلو
-    private boolean firstLogin = false; // غتولي true غير فاش كيكريه الأدمين
+    private boolean active = false;
+    private boolean firstLogin = false;
 
     private LocalDateTime createdAt = LocalDateTime.now();
-
     private LocalDateTime updatedAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
@@ -51,28 +41,29 @@ public class User {
     @JsonIgnore
     private Set<Role> roles = new HashSet<>();
 
-    public boolean isActive() {
-        return active;
-    }
+    // Constructors
+    public User() {}
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
+    public User(Integer id, String firstName, String lastName, String password, String email, boolean active, boolean firstLogin, LocalDateTime createdAt, LocalDateTime updatedAt, Set<Role> roles) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.password = password;
         this.email = email;
+        this.active = active;
+        this.firstLogin = firstLogin;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.roles = roles;
+    }
+
+    // Getters & Setters
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getFirstName() {
@@ -81,14 +72,6 @@ public class User {
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 
     public String getLastName() {
@@ -107,12 +90,36 @@ public class User {
         this.password = password;
     }
 
-    public Set<Role> getRoles() {
-        return roles;
+    public String getEmail() {
+        return email;
     }
 
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public boolean isFirstLogin() {
+        return firstLogin;
+    }
+
+    public void setFirstLogin(boolean firstLogin) {
+        this.firstLogin = firstLogin;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public LocalDateTime getUpdatedAt() {
@@ -123,5 +130,11 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    public Set<Role> getRoles() {
+        return roles;
+    }
 
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
 }

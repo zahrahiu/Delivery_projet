@@ -1,18 +1,20 @@
 package org.delivery.parcel_service.event.producer;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class ParcelEventProducer {
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Async // دابا هاد الميتود غتخدم في الخلفية
+    // ✅ Constructeur manuel (sans Lombok)
+    public ParcelEventProducer(KafkaTemplate<String, Object> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+
+    @Async
     public void sendParcelCreatedEvent(Object event) {
-        // نستخدمو CompletableFuture باش ما نحبسوش الـ Thread
         kafkaTemplate.send("parcel-events", event)
                 .whenComplete((result, ex) -> {
                     if (ex == null) {

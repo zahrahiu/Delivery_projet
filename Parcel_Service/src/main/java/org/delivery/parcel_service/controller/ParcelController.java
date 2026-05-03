@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.delivery.parcel_service.domain.entity.ParcelStatus;
 import org.delivery.parcel_service.dto.ClientUpdateRequest;
 import org.delivery.parcel_service.dto.DeliveryConfirmationRequest;
@@ -22,11 +21,17 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/parcels")
-@RequiredArgsConstructor
 @Tag(name = "Parcels", description = "API pour la gestion des colis (Parcels) et du suivi de livraison")
 public class ParcelController {
 
     private final ParcelService parcelService;
+
+
+    public ParcelController(ParcelService parcelService) {
+        this.parcelService = parcelService;
+    }
+
+
 
     @Operation(summary = "Créer un nouveau colis", description = "Accessible uniquement par les DISPATCHER.")
     @ApiResponses(value = {
