@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tarif-zone-service
+  namespace: default
+  labels:
+    app: tarif-zone-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tarif-zone-service
+  template:
+    metadata:
+      labels:
+        app: tarif-zone-service
+    spec:
+      containers:
+        - name: tarif-zone-service
+          image: tarif-zone-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5005
+          env:
+            - name: PORT
+              value: "5005"
+            - name: HOST
+              value: "tarif-zone-service"
+            - name: EUREKA_HOST
+              value: "discovery-service"
+            - name: EUREKA_PORT
+              value: "8761"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DB_NAME
+              value: "zone_tarif_db"
+            - name: DB_PASSWORD
+              value: "zahra123"
+            - name: DB_PORT
+              value: "5432"
+          readinessProbe:
+            tcpSocket:
+              port: 5005
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5005
+            initialDelaySeconds: 60
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tarif-zone-service
+spec:
+  selector:
+    app: tarif-zone-service
+  ports:
+    - protocol: TCP
+      port: 5005
+      targetPort: 5005
+  type: ClusterIP

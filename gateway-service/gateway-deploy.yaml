@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  labels:
+    app: gateway-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+        - name: gateway-service
+          image: gateway-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8888
+          env:
+            # --- App Config ---
+            - name: SPRING_APPLICATION_NAME
+              value: "gateway-service"
+            - name: SERVER_PORT
+              value: "8888"
+
+            # --- Eureka Setup (Smiya nqiya: gateway-service:8888) ---
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://discovery-service:8761/eureka/"
+            - name: EUREKA_INSTANCE_INSTANCE_ID
+              value: "gateway-service:8888"
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: "gateway-service"
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "false"
+
+
+
+            # --- Routes Configuration ---
+            # Route 0: Users Service
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_ID
+              value: "users-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_URI
+              value: "lb://users-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_PREDICATES_0
+              value: "Path=/users-service/**"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_0_FILTERS_0
+              value: "StripPrefix=1"
+
+            # Route 1: Security Service
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_ID
+              value: "security-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_URI
+              value: "lb://security-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_PREDICATES_0
+              value: "Path=/service-security/**"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_1_FILTERS_0
+              value: "StripPrefix=1"
+
+            # Route 2: Tracking Service
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_2_ID
+              value: "tracking-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_2_URI
+              value: "lb://tracking-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_2_PREDICATES_0
+              value: "Path=/tracking-service/**"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_2_FILTERS_0
+              value: "StripPrefix=1"
+
+            # Route 3: Notification Service
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_3_ID
+              value: "notification-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_3_URI
+              value: "lb://notification-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_3_PREDICATES_0
+              value: "Path=/notification-service/**"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_3_FILTERS_0
+              value: "StripPrefix=1"
+
+            # Route 4: Tarif Zone Service (Fixing the 404)
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_4_ID
+              value: "tarif-zone-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_4_URI
+              value: "lb://tarif-zone-service"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_4_PREDICATES_0
+              value: "Path=/tarif-zone-service/**"
+            - name: SPRING_CLOUD_GATEWAY_ROUTES_4_FILTERS_0
+              value: "StripPrefix=1"
+
+          livenessProbe:
+            tcpSocket:
+              port: 8888
+            initialDelaySeconds: 60
+          readinessProbe:
+            tcpSocket:
+              port: 8888
+            initialDelaySeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: gateway-service
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888

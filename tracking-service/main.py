@@ -1,3 +1,4 @@
+import os
 import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,13 @@ from kafka.location_consumer import start_kafka_listeners
 
 app = FastAPI(title="Qrib Lik Tracking Service")
 
-# 1. إعدادات CORS
+# Environment variables
+EUREKA_HOST = os.getenv("EUREKA_HOST", "localhost")
+EUREKA_PORT = os.getenv("EUREKA_PORT", "8761")
+INSTANCE_HOST = os.getenv("INSTANCE_HOST", "localhost")
+PORT = int(os.getenv("PORT", "8085"))
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,7 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. تخصيص Swagger لدعم JWT (Bearer Token)
+# Swagger
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -29,7 +36,6 @@ def custom_openapi():
         description="Documentation pour le service de suivi GPS en temps réel",
         routes=app.routes,
     )
-    # إضافة تعريف Security Scheme
     openapi_schema["components"]["securitySchemes"] = {
         "BearerAuth": {
             "type": "http",
@@ -37,34 +43,32 @@ def custom_openapi():
             "bearerFormat": "JWT",
         }
     }
-    # ربط الحماية بجميع المسارات التي تحتاج توثيق
-    for path in openapi_schema["paths"]:
-        for method in openapi_schema["paths"][path]:
-            # نضيف خيار الحماية فقط للمسارات التي نحددها في الـ Controller
-            pass
-
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
 app.openapi = custom_openapi
 
-# 3. تضمين الـ Routers
 app.include_router(router, prefix="/api/v1/tracking")
 
 @app.on_event("startup")
 async def startup():
     await connect_db()
-    # التسجيل في Eureka
+
+    # Eureka registration
+    eureka_url = f"http://{EUREKA_HOST}:{EUREKA_PORT}/eureka"
+    print(f"🔗 Registering to Eureka at: {eureka_url}")
+
     await eureka_client.init_async(
-        eureka_server="http://localhost:8761/eureka",
+        eureka_server=eureka_url,
         app_name="TRACKING-SERVICE",
-        instance_port=8085,
-        instance_id=f"tracking-service:8085",
-        instance_host="localhost",
+        instance_port=PORT,
+        instance_id=f"tracking-service:{PORT}",
+        instance_host=INSTANCE_HOST,
         should_register=True,
         renewal_interval_in_secs=10
     )
-    # تشغيل Kafka في الخلفية
+
+    # Kafka
     asyncio.create_task(start_kafka_listeners())
 
 @app.on_event("shutdown")
@@ -73,4 +77,4 @@ async def shutdown():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8085, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=PORT, reload=True)

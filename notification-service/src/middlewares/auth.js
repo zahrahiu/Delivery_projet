@@ -13,6 +13,15 @@ module.exports = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, publicKey, { algorithms: ['RS256'] });
         req.user = decoded;
+
+        if (req.user.roles && typeof req.user.roles === 'string') {
+            req.user.roles = req.user.roles.split(' ');
+        }
+
+        if (req.user.authorities && typeof req.user.authorities === 'string') {
+            req.user.authorities = req.user.authorities.split(' ');
+        }
+
         next();
     } catch (err) {
         res.status(401).json({ message: "Token non valide" });

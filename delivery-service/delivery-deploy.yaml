@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delivery-service
+  namespace: default
+  labels:
+    app: delivery-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: delivery-service
+  template:
+    metadata:
+      labels:
+        app: delivery-service
+    spec:
+      containers:
+        - name: delivery-service
+          image: delivery-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3001
+          env:
+            - name: PORT
+              value: "3001"
+            - name: HOST
+              value: "delivery-service"
+            - name: EUREKA_HOST
+              value: "discovery-service"
+            - name: EUREKA_PORT
+              value: "8761"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DB_NAME
+              value: "gestion_livraisons_db"
+            - name: DB_PASSWORD
+              value: "zahra123"
+            - name: DB_PORT
+              value: "5432"
+            - name: KAFKA_BROKER
+              value: "kafka-service:9092"
+          readinessProbe:
+            tcpSocket:
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3001
+            initialDelaySeconds: 60
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: delivery-service
+spec:
+  selector:
+    app: delivery-service
+  ports:
+    - protocol: TCP
+      port: 3001
+      targetPort: 3001
+  type: ClusterIP

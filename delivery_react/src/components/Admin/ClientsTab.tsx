@@ -82,7 +82,12 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
     const fetchClients = async () => {
         try {
             const response = await axios.get(API_URL, getAuthConfig());
-            const filtered = response.data.filter((u: any) => u.role === "CLIENT");
+
+            const filtered = response.data.filter((u: any) =>
+                u.role === "CLIENT" &&
+                u.active === true  // 🔥 هذا هو الفلتر المهم!
+            );
+
             setClients(filtered);
             if (onClientsUpdate) onClientsUpdate(filtered.length);
         } catch (error) {

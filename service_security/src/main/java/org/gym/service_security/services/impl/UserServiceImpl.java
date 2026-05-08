@@ -65,6 +65,8 @@ public class UserServiceImpl implements UserService {
             user.setRoles(roles);
         }
 
+        
+
         return userMapper.Entity_to_DTO(userRepository.save(user));
     }
 
@@ -121,11 +123,9 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        // تحديث المعلومات
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
 
-        // تأكدي واش الإيميل تبدل ومستعملش من طرف مستخدم آخر
         if (!user.getEmail().equals(request.getEmail())) {
             if (userRepository.findByEmail(request.getEmail()).isPresent()) {
                 throw new RuntimeException("Email déjà utilisé");
@@ -133,7 +133,6 @@ public class UserServiceImpl implements UserService {
             user.setEmail(request.getEmail());
         }
 
-        // إلا صيفطتي باسورد جديد، هاشيه وحفظيه
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }

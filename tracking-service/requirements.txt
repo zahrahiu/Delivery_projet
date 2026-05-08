@@ -5,3 +5,7 @@ fastapi
    py-eureka-client
    PyJWT
    cryptography
+
+   py_zipkin
+   requests
+   kafka-python

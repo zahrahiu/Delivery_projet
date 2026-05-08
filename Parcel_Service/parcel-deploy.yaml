@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parcel-service
+  labels:
+    app: parcel-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: parcel-service
+  template:
+    metadata:
+      labels:
+        app: parcel-service
+    spec:
+      containers:
+        - name: parcel-service
+          image: parcel-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "docker"
+            - name: SPRING_APPLICATION_NAME
+              value: "parcel-service"
+            - name: SERVER_PORT
+              value: "8082"
+
+            # Database Configuration
+            # تأكدي بلي هاد الداتابيز موجودة فـ Postgres
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://postgres-service:5432/delivery_db_parcels"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "postgres"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "zahra123"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+
+            # Config Server Connection
+            # ردي البال للبور واش 9999 ولا 8888
+            - name: SPRING_CLOUD_CONFIG_URI
+              value: "http://configuration-service:9999"
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://configuration-service:9999"
+
+            # Eureka Configuration
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://discovery-service:8761/eureka/"
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              value: "true"
+
+            # Kafka Configuration
+            - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka-service:9092"
+
+          readinessProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8082
+            initialDelaySeconds: 120
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: parcel-service
+spec:
+  selector:
+    app: parcel-service
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP

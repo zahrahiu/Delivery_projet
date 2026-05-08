@@ -18,6 +18,9 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || 'localhost';
+const EUREKA_HOST = process.env.EUREKA_HOST || 'localhost';
+const EUREKA_PORT = process.env.EUREKA_PORT || 8761;
 
 /* ===================== Swagger Config ===================== */
 const swaggerOptions = {
@@ -30,7 +33,7 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: `http://localhost:${PORT}`
+                url: `http://${HOST}:${PORT}`
             }
         ],
         components: {
@@ -57,9 +60,9 @@ const client = new Eureka({
     instance: {
         app: 'delivery-service',
         instanceId: `delivery-service:${PORT}`,
-        hostName: 'localhost',
+        hostName: HOST,
         ipAddr: '127.0.0.1',
-        statusPageUrl: `http://localhost:${PORT}`,
+        statusPageUrl: `http://${HOST}:${PORT}`,
         port: {
             '$': PORT,
             '@enabled': 'true',
@@ -71,8 +74,8 @@ const client = new Eureka({
         },
     },
     eureka: {
-        host: 'localhost',
-        port: 8761,
+        host: EUREKA_HOST,
+        port: EUREKA_PORT,
         servicePath: '/eureka/apps/',
     },
 });
@@ -104,3 +107,4 @@ initDb()
     .catch(err => {
         console.error("❌ DB Init Error:", err);
     });
+

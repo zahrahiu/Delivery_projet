@@ -14,6 +14,9 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 5005;
+const HOST = process.env.HOST || 'localhost';
+const EUREKA_HOST = process.env.EUREKA_HOST || 'localhost';
+const EUREKA_PORT = process.env.EUREKA_PORT || 8761;
 
 /* ===================== Swagger Config ===================== */
 const options = {
@@ -24,22 +27,14 @@ const options = {
             version: "1.0.0",
             description: "API gestion des tarifs et zones",
         },
-        servers: [
-            {
-                url: `http://localhost:${PORT}`,
-            },
-        ],
+        servers: [{ url: `http://${HOST}:${PORT}` }],
         components: {
             securitySchemes: {
-                bearerAuth: {
-                    type: "http",
-                    scheme: "bearer",
-                    bearerFormat: "JWT",
-                },
-            },
-        },
+                bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" }
+            }
+        }
     },
-    apis: ["./src/routes/*.js"],
+    apis: ["./src/routes/*.js"]
 };
 
 const swaggerSpec = swaggerJsdoc(options);
@@ -54,13 +49,10 @@ const client = new Eureka({
     instance: {
         app: 'tarif-zone-service',
         instanceId: `tarif-zone-service:${PORT}`,
-        hostName: 'localhost',
+        hostName: HOST,
         ipAddr: '127.0.0.1',
-        statusPageUrl: `http://localhost:${PORT}`,
-        port: {
-            '$': PORT,
-            '@enabled': 'true',
-        },
+        statusPageUrl: `http://${HOST}:${PORT}`,
+        port: { '$': PORT, '@enabled': 'true' },
         vipAddress: 'tarif-zone-service',
         dataCenterInfo: {
             '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
@@ -68,15 +60,14 @@ const client = new Eureka({
         },
     },
     eureka: {
-        host: 'localhost',
-        port: 8761,
+        host: EUREKA_HOST,
+        port: EUREKA_PORT,
         servicePath: '/eureka/apps/',
     },
 });
 
 app.listen(PORT, () => {
     console.log(`🚀 Service démarré sur le port ${PORT}`);
-
     client.start((error) => {
         console.log(error || '✅ Service enregistré sur Eureka !');
     });

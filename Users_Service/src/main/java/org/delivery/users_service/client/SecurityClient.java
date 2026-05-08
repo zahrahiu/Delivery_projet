@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@FeignClient(name = "service-security", url = "http://localhost:8080")
+@FeignClient(name = "service-security", url = "http://security-service:8080")
 public interface SecurityClient {
 
     @PostMapping("/v1/users/create")
@@ -20,4 +20,8 @@ public interface SecurityClient {
 
     @PostMapping("/v1/users/register")
     Map<String, Object> registerAccount(@RequestBody Map<String, Object> securityReq);
+
+    // ✅ زيد هاد الميثود
+    @DeleteMapping("/v1/users/{id}")
+    void deleteAccount(@PathVariable("id") Integer id);
 }

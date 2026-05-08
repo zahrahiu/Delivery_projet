@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: configuration-service
+  labels:
+    app: configuration-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: configuration-service
+  template:
+    metadata:
+      labels:
+        app: configuration-service
+    spec:
+      containers:
+        - name: configuration-service
+          image: configuration-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 9999
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "docker"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://discovery-service:8761/eureka/"
+
+          # تغيير الـ Probes لـ tcpSocket كيعطي الوقت للسيرفيس يكمل الـ Boot ديالو براحتو
+          livenessProbe:
+            tcpSocket:
+              port: 9999
+            initialDelaySeconds: 120 # عطيناه دقيقتين كاملين
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: 9999
+            initialDelaySeconds: 60
+            periodSeconds: 10
+
+          # ضروري نزيدو الـ Memory حيت الـ Git operations فـ Java كتاكل الـ RAM
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: configuration-service
+spec:
+  selector:
+    app: configuration-service
+  ports:
+    - protocol: TCP
+      port: 9999
+      targetPort: 9999
+  type: ClusterIP

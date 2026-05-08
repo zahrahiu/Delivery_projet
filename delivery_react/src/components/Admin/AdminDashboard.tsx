@@ -330,11 +330,11 @@ const AdminDashboard: React.FC = () => {
 
 // بيانات مؤقتة للـ AreaChart (يمكن استبدالها ببيانات حقيقية لاحقاً)
 const deliveryData = [
-    { month: 'Jan', delivered: 0, returned: 0 },
-    { month: 'Fév', delivered: 0, returned: 0 },
-    { month: 'Mar', delivered: 0, returned: 0 },
-    { month: 'Avr', delivered: 0, returned: 0 },
-    { month: 'Mai', delivered: 0, returned: 0 },
+    { month: 'Jan', delivered: 10, returned: 0 },
+    { month: 'Fév', delivered: 0, returned: 4},
+    { month: 'Mar', delivered: 9, returned: 0 },
+    { month: 'Avr', delivered: 4, returned: 2 },
+    { month: 'Mai', delivered: 8, returned: 2 },
 ];
 
 export default AdminDashboard;

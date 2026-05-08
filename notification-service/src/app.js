@@ -15,7 +15,7 @@ const Notification = require('./models/Notification');
 const app = express();
 
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Role'],
     credentials: true
@@ -24,8 +24,11 @@ app.use(cors({
 app.use(express.json());
 
 const PORT = process.env.PORT || 5006;
+const HOST = process.env.HOST || 'localhost';
+const EUREKA_HOST = process.env.EUREKA_HOST || 'localhost';
+const EUREKA_PORT = process.env.EUREKA_PORT || 8761;
 
-/* ===================== Configuration Swagger ===================== */
+/* ===================== Swagger ===================== */
 const options = {
     definition: {
         openapi: "3.0.0",
@@ -34,38 +37,28 @@ const options = {
             version: "1.0.0",
             description: "API de gestion des notifications (Email + Kafka)",
         },
-        servers: [
-            {
-                url: `http://localhost:${PORT}`,
-            },
-        ],
+        servers: [{ url: `http://${HOST}:${PORT}` }],
         components: {
             securitySchemes: {
-                bearerAuth: {
-                    type: "http",
-                    scheme: "bearer",
-                    bearerFormat: "JWT",
-                },
-            },
-        },
+                bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" }
+            }
+        }
     },
-    apis: ["./src/routes/*.js"],
+    apis: ["./src/routes/*.js"]
 };
 
 const swaggerSpec = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 app.use('/api/notifications', notificationRoutes);
 
 connectDB();
 
-/* ===================== Gestionnaire Kafka ===================== */
+/* ===================== Kafka Handler ===================== */
 const handleKafkaMessages = async (data, topic) => {
     console.log(`📩 Message reçu du topic: ${topic}`, data);
-
     try {
-        // Topic: Inscription des utilisateurs
         if (topic === 'user-creation-topic') {
+            // 1. تسجيل notification فالداتابيز
             const newNotification = new Notification({
                 recipient: data.email,
                 subject: "Nouvelle demande d'inscription",
@@ -77,37 +70,41 @@ const handleKafkaMessages = async (data, topic) => {
                 role: data.role,
                 sentBy: 'SYSTEM'
             });
-
             await newNotification.save();
             console.log(`✅ Nouvelle demande enregistrée pour: ${data.email}`);
 
+            // 2. إيميل تأكيد التسجيل للمستخدم
+            if (data.type === 'NEW_SIGNUP_REQUEST') {
+                await emailService.sendSignupConfirmation(data.email, data.firstName);
+                console.log(`✅ Email de confirmation envoyé à: ${data.email}`);
+            }
+
+            // 3. إيميل التفعيل ملي Admin كايضغط Accept
             if (data.type === 'ACCOUNT_ACTIVATED') {
                 await emailService.sendNotification(
                     data.email,
-                    "Félicitations ! Votre compte QribLik est activé",
-                    `Bonjour ${data.firstName}, l'administrateur a accepté votre demande. Vous pouvez maintenant vous connecter.`,
+                    "🎉 Félicitations ! Votre compte QribLik est activé",
+                    `Bonjour ${data.firstName},\n\nL'administrateur a accepté votre demande.\n\nVous pouvez maintenant vous connecter.\n\nCordialement,\nL'équipe QribLik`,
                     'KAFKA'
                 );
                 console.log(`✅ Email d'activation envoyé à: ${data.email}`);
             }
-        }
-        // Topic: Événements des colis
-        else if (topic === 'parcel-events') {
+        } else if (topic === 'parcel-events') {
             if (data.status === 'CREATED' || data.status === 'PENDING') {
-                const recipientEmail = data.clientEmail;
-                if (recipientEmail) {
-                    await emailService.sendNotification(
-                        recipientEmail,
-                        "📦 Confirmation de colis",
-                        `Numéro de suivi: ${data.trackingNumber}`,
-                        'KAFKA'
-                    );
-                }
+                const parcelNotif = new Notification({
+                    recipient: data.clientEmail || "admin@system.com",
+                    subject: "📦 Nouveau Colis",
+                    content: `Colis ${data.trackingNumber} créé`,
+                    status: 'PENDING',
+                    source: 'KAFKA',
+                    type: 'PARCEL_CREATED',
+                    userId: data.clientId || null,
+                    role: 'CLIENT',
+                    sentBy: 'SYSTEM'
+                });
+                await parcelNotif.save();
             }
-        }
-        // Topic: Mises à jour des colis par le client
-        else if (topic === 'parcel-update-events') {
-            // Construction du texte selon les modifications
+        } else if (topic === 'parcel-update-events') {
             let changeText = '';
             if (data.actionType === 'INFO_UPDATED') {
                 if (data.changes === 'العنوان ورقم الهاتف') {
@@ -123,37 +120,23 @@ const handleKafkaMessages = async (data, topic) => {
 
             const content = `${data.clientName} (${data.clientEmail}) ${changeText} numéro ${data.trackingNumber}`;
 
-            // Notification pour le Dispatcher
             const dispatcherNotif = new Notification({
                 recipient: "dispatcher@system.com",
                 subject: `📦 ${data.actionType === 'INFO_UPDATED' ? 'Mise à jour des informations du colis' : 'Annulation de colis'}`,
-                content: content,
-                status: 'PENDING',
-                source: 'KAFKA',
-                type: 'PARCEL_UPDATE',
-                firstName: data.clientName,
-                email: data.clientEmail,
-                userId: null,
-                role: 'DISPATCHER',
-                sentBy: 'SYSTEM'
+                content, status: 'PENDING', source: 'KAFKA', type: 'PARCEL_UPDATE',
+                firstName: data.clientName, email: data.clientEmail,
+                userId: null, role: 'DISPATCHER', sentBy: 'SYSTEM'
             });
             await dispatcherNotif.save();
             console.log(`✅ Notification Dispatcher: ${content}`);
 
-            // Notification pour le Livreur (si assigné)
             if (data.assignedLivreurId && data.assignedLivreurId !== 'null') {
                 const livreurNotif = new Notification({
                     recipient: `livreur_${data.assignedLivreurId}@system.com`,
                     subject: `📦 ${data.actionType === 'INFO_UPDATED' ? 'Mise à jour des informations du colis' : 'Annulation de colis'}`,
-                    content: content,
-                    status: 'PENDING',
-                    source: 'KAFKA',
-                    type: 'PARCEL_UPDATE',
-                    firstName: data.clientName,
-                    email: data.clientEmail,
-                    userId: parseInt(data.assignedLivreurId),
-                    role: 'LIVREUR',
-                    sentBy: 'SYSTEM'
+                    content, status: 'PENDING', source: 'KAFKA', type: 'PARCEL_UPDATE',
+                    firstName: data.clientName, email: data.clientEmail,
+                    userId: parseInt(data.assignedLivreurId), role: 'LIVREUR', sentBy: 'SYSTEM'
                 });
                 await livreurNotif.save();
                 console.log(`✅ Notification Livreur: ${data.assignedLivreurId}`);
@@ -164,32 +147,38 @@ const handleKafkaMessages = async (data, topic) => {
     }
 };
 
-// Démarrage du consumer Kafka
-runConsumer(handleKafkaMessages).catch(err =>
-    console.error("❌ Erreur Kafka:", err)
-);
+runConsumer(handleKafkaMessages).catch(err => console.error("❌ Erreur Kafka:", err));
 
 /* ===================== Eureka ===================== */
 const client = new Eureka({
     instance: {
         app: 'notification-service',
-        instanceId: `notification-service:${PORT}`,
-        hostName: 'localhost',
-        ipAddr: '127.0.0.1',
-        statusPageUrl: `http://localhost:${PORT}`,
+        instanceId: `notification-service:${process.env.POD_IP}:${process.env.PORT}`,
+
+        // ✅ المهم: نستعمل Pod IP
+        hostName: process.env.POD_IP,
+        ipAddr: process.env.POD_IP,
+
+        preferIpAddress: true,
+
+        statusPageUrl: `http://${process.env.POD_IP}:${process.env.PORT}`,
+
         port: {
-            '$': PORT,
-            '@enabled': 'true',
+            '$': process.env.PORT || 5006,
+            '@enabled': 'true'
         },
+
         vipAddress: 'notification-service',
+
         dataCenterInfo: {
             '@class': 'com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo',
             name: 'MyOwn',
         },
     },
+
     eureka: {
-        host: 'localhost',
-        port: 8761,
+        host: process.env.EUREKA_HOST,
+        port: process.env.EUREKA_PORT,
         servicePath: '/eureka/apps/',
     },
 });

@@ -30,7 +30,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         // كنسمحو لـ React (البور 3000) يقرأ البيانات
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-       // configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        // configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Access-Control-Allow-Origin", "Accept"));
         configuration.setAllowCredentials(true);
@@ -59,7 +59,7 @@ public class SecurityConfig {
                         .pathMatchers("/tracking-service/ws/**").permitAll()
                         .pathMatchers(HttpMethod.PATCH, "/service-security/v1/users/*/change-password").permitAll()
 
-                                .pathMatchers("/users-service/uploads/**").authenticated()
+                        .pathMatchers("/users-service/uploads/**").authenticated()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))

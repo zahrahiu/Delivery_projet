@@ -7,8 +7,8 @@ const Notification = require('../models/Notification');
 // الـ endpoint اللي كتجيبو فـ React للتنبيهات
 router.get('/admin-alerts', auth, async (req, res) => {
     try {
-        // جلب الـ role من التوكن
-        const authorities = req.user.authorities || req.user.roles || "";
+        const authorities = req.user.authorities || [];
+        const roles = req.user.roles || [];
         const userId = req.user.userId || req.user.sub;
 
         console.log("🔐 User authorities:", authorities);
@@ -16,23 +16,23 @@ router.get('/admin-alerts', auth, async (req, res) => {
 
         let filter = {};
 
-        // 🔥 ADMIN: يشوف غير طلبات التسجيل (NEW_SIGNUP_REQUEST)
-        if (typeof authorities === 'string' && authorities.includes('ROLE_ADMIN')) {
-            filter = { type: 'NEW_SIGNUP_REQUEST' };
-            console.log("👑 Admin: seeing only NEW_SIGNUP_REQUEST notifications");
+        if (Array.isArray(authorities) && authorities.includes('ROLE_ADMIN') ||
+            Array.isArray(roles) && roles.includes('ROLE_ADMIN')) {
+            // ✅ تصفية: فقط PENDING
+            filter = { type: 'NEW_SIGNUP_REQUEST', status: 'PENDING' };
+            console.log("👑 Admin: seeing only NEW_SIGNUP_REQUEST PENDING notifications");
         }
-        // 🔥 DISPATCHER: يشوف غير تحديثات الكوليسات والإلغاء (PARCEL_UPDATE)
-        else if (typeof authorities === 'string' && authorities.includes('ROLE_DISPATCHER')) {
+        else if (Array.isArray(authorities) && authorities.includes('ROLE_DISPATCHER') ||
+            Array.isArray(roles) && roles.includes('ROLE_DISPATCHER')) {
             filter = { type: 'PARCEL_UPDATE', role: 'DISPATCHER' };
             console.log("📋 Dispatcher: seeing only PARCEL_UPDATE notifications");
         }
-        // LIVREUR: يشوف الإشعارات اللي فيها userId ديالو
-        else if (typeof authorities === 'string' && authorities.includes('ROLE_LIVREUR')) {
+        else if (Array.isArray(authorities) && authorities.includes('ROLE_LIVREUR') ||
+            Array.isArray(roles) && roles.includes('ROLE_LIVREUR')) {
             const numericUserId = parseInt(userId);
             filter = { type: 'PARCEL_UPDATE', role: 'LIVREUR', userId: numericUserId };
             console.log(`🚚 Livreur: seeing notifications for userId: ${numericUserId}`);
         }
-        // CLIENT: ما يشوف حتى حاجة
         else {
             filter = { _id: null };
             console.log("👤 Client: seeing no notifications");
@@ -42,7 +42,7 @@ router.get('/admin-alerts', auth, async (req, res) => {
             .sort({ createdAt: -1 })
             .limit(50);
 
-        console.log(`📊 Found ${alerts.length} notifications for role: ${authorities}`);
+        console.log(`📊 Found ${alerts.length} notifications for authorities: ${authorities}`);
         console.log("📊 Filter used:", JSON.stringify(filter));
 
         res.json(alerts);

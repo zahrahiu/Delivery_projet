@@ -1,10 +1,9 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-    // HOST و PORT كيجيو من .env بحال اللي درتي فـ Python
     const MONGO_HOST = process.env.DB_HOST || 'localhost';
     const MONGO_PORT = process.env.DB_PORT || 27017;
-    const DB_NAME = 'notification_db';
+    const DB_NAME = process.env.DB_NAME || 'notification_db';
 
     const MONGO_URI = `mongodb://${MONGO_HOST}:${MONGO_PORT}/${DB_NAME}`;
 

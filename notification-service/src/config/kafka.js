@@ -1,32 +1,41 @@
 const { Kafka } = require('kafkajs');
 
+// 1. تعريف Kafka هو الأول
 const kafka = new Kafka({
     clientId: 'notification-service',
     brokers: [process.env.KAFKA_BROKER || 'localhost:9092']
 });
 
-const consumer = kafka.consumer({ groupId: 'notification-group' });
+// 2. تعريف الـ Consumer مرة واحدة فقط وبـ Group ID جديد
+const consumer = kafka.consumer({ groupId: 'notification-group-v4' });
 
 const runConsumer = async (onMessageReceived) => {
-    await consumer.connect();
-    console.log("✅ Kafka Consumer Connecté...");
+    try {
+        await consumer.connect();
+        console.log("✅ Kafka Consumer Connecté...");
 
-    // 1. كنتصنتو لـ كاع الـ Topics اللي محتاجين
-    await consumer.subscribe({ topics: ['parcel-events', 'user-creation-topic', 'parcel-update-events'], fromBeginning: false });
+        // 3. الاشتراك في الـ Topics
+        await consumer.subscribe({
+            topics: ['parcel-events', 'user-creation-topic', 'parcel-update-events'],
+            fromBeginning: false
+        });
 
-    await consumer.run({
-        eachMessage: async ({ topic, message }) => { // زدنا topic هنا
-            try {
-                const data = JSON.parse(message.value.toString());
-                console.log(`📩 Message reçu de Java sur [${topic}]:`, data);
+        await consumer.run({
+            eachMessage: async ({ topic, message }) => {
+                try {
+                    const data = JSON.parse(message.value.toString());
+                    console.log(`📩 Message reçu de Java sur [${topic}]:`, data);
 
-                // 2. كنصيفطو الداتا والـ topic لـ handleKafkaMessages
-                await onMessageReceived(data, topic);
-            } catch (err) {
-                console.error("❌ Erreur de parsing JSON:", err);
-            }
-        },
-    });
+                    // إرسال البيانات للمعالج
+                    await onMessageReceived(data, topic);
+                } catch (err) {
+                    console.error("❌ Erreur de parsing JSON:", err.message);
+                }
+            },
+        });
+    } catch (error) {
+        console.error("❌ Erreur de connexion au Consumer Kafka:", error);
+    }
 };
 
 module.exports = runConsumer;

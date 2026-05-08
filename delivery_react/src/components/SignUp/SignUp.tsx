@@ -11,6 +11,8 @@ const Signup: React.FC = () => {
     const navigate = useNavigate();
 
     // State for villes list
+
+
     const [villes, setVilles] = useState<{ id: number; ville: string; frais_livraison: number }[]>([]);
     const [loadingVilles, setLoadingVilles] = useState(true);
 
@@ -151,9 +153,7 @@ const Signup: React.FC = () => {
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!isEmailPasswordValid()) return;
-
         setLoading(true);
 
         try {
@@ -162,39 +162,39 @@ const Signup: React.FC = () => {
                 lastName: formData.nom,
                 email: formData.email,
                 password: formData.password,
-                phone: formData.telephone,
+                phone: formData.telephone,           // ✅ phone
                 cni: formData.cni,
                 address: formData.adresse,
-                zone: formData.ville,
+                zone: formData.ville,                 // ✅ zone (ville selectionnée)
                 role: formData.role,
+                dateNaissance: formData.dateNaissance || null,  // 🔥 أضف هاد السطر
                 vehicleType: formData.role === "LIVREUR" ? formData.vehicleType : null,
                 matricule: formData.role === "LIVREUR" ? formData.matricule : null,
                 permisNumber: formData.role === "LIVREUR" ? formData.permisNumber : null,
                 createdBy: "SIGNUP"
-
             };
 
-            await axios.post("http://localhost:8888/users-service/api/profiles", payload);
+            console.log("📤 Sending payload:", JSON.stringify(payload, null, 2));
 
-            showMessage(
-                'success',
-                '✅ Inscription réussie !',
-                'Votre compte est en attente de validation par l\'administration.'
+            const response = await axios.post(
+                "http://localhost:8888/users-service/api/profiles",
+                payload,
+                { headers: { 'Content-Type': 'application/json' } }
             );
 
-            setTimeout(() => {
-                navigate("/login");
-            }, 2000);
+            console.log("✅ Response:", response.data);
+            showMessage('success', '✅ Inscription réussie !', 'Votre compte est en attente de validation.');
+            setTimeout(() => navigate("/login"), 2000);
 
         } catch (err: any) {
             console.error("Signup Error:", err);
-            const message = err.response?.data?.message || "Erreur lors de l'inscription. Veuillez réessayer.";
+            console.error("Response data:", err.response?.data);
+            const message = err.response?.data?.message || "Erreur lors de l'inscription.";
             showMessage('error', '❌ Erreur', message);
         } finally {
             setLoading(false);
         }
     };
-
     const VilleSelect = () => (
         <select
             name="ville"

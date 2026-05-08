@@ -1,3 +1,4 @@
+import os
 from motor.motor_asyncio import AsyncIOMotorClient
 
 class Database:
@@ -7,7 +8,6 @@ class Database:
 
     @property
     def db(self):
-        # هاد السطر كيضمن لينا أننا ديما كنرجعو الـ database object من الـ client
         if self.client:
             return self.client.qriblik_tracking_db
         return None
@@ -16,10 +16,14 @@ db_helper = Database()
 
 async def connect_db():
     try:
-        db_helper.client = AsyncIOMotorClient("mongodb://localhost:27017")
-        # كنحاولوا نديروا شي عملية بسيطة باش نتأكدوا من الاتصال
+        # قراءة من environment variables
+        MONGO_HOST = os.getenv("DB_HOST", "localhost")
+        MONGO_PORT = os.getenv("DB_PORT", "27017")
+        MONGO_URI = f"mongodb://{MONGO_HOST}:{MONGO_PORT}"
+
+        db_helper.client = AsyncIOMotorClient(MONGO_URI)
         await db_helper.client.admin.command('ping')
-        print("✅ MongoDB Connected: qriblik_tracking_db")
+        print(f"✅ MongoDB Connected: qriblik_tracking_db at {MONGO_URI}")
     except Exception as e:
         print(f"❌ Error connecting to MongoDB: {e}")
 

@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+
 import Home from "./components/Home";
 import Login from "./components/Login/Login";
 import Signup from "./components/SignUp/SignUp";
@@ -20,8 +22,32 @@ import VillesManagement from "./components/Admin/VillesTab";
 import ZonesManagement from "./components/Admin/ZonesTab";
 import ColisList from "./components/Admin/ColisList";
 import LivreurList from "./components/Dispatchers/LivreurList";
+import axios from "axios";
 
 function App() {
+
+    const [globalNotifications, setGlobalNotifications] = useState([]);
+
+    const fetchNotifications = useCallback(async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+            const res = await axios.get(
+                "http://localhost:8888/notification-service/api/notifications/admin-alerts",
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setGlobalNotifications(res.data);
+        } catch (err) {
+            console.error("Erreur notifications:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 15000);
+        return () => clearInterval(interval);
+    }, [fetchNotifications]);
+
     return (
         <BrowserRouter>
             <Routes>
@@ -55,7 +81,6 @@ function App() {
                 <Route path="/profile" element={<ProtectedRoute allowedRoles={["ADMIN", "DISPATCHER", "LIVREUR", "CLIENT"]}><UserProfile /></ProtectedRoute>} />
                 <Route path="/edit-profile" element={<EditProfile />} />
 
-ry
             </Routes>
 
         </BrowserRouter>

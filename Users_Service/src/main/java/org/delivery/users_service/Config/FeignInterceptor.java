@@ -18,7 +18,8 @@ public class FeignInterceptor implements RequestInterceptor {
             HttpServletRequest request = attributes.getRequest();
             String authorizationHeader = request.getHeader("Authorization");
 
-            if (authorizationHeader != null) {
+            // ✅ بث Authorization غير إلا كان موجود (SignUp ما عندوش)
+            if (authorizationHeader != null && !authorizationHeader.isEmpty()) {
                 template.header("Authorization", authorizationHeader);
             }
         }

@@ -2,33 +2,32 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'zone_tarif_db',
+    password: process.env.DB_PASSWORD || 'zahra123',
+    port: process.env.DB_PORT || 5432,
 });
 
 const initDb = async () => {
     try {
         const createZonesTable = `
             CREATE TABLE IF NOT EXISTS zones (
-                id SERIAL PRIMARY KEY,
-                nom_zone VARCHAR(100) UNIQUE NOT NULL,
+                                                 id SERIAL PRIMARY KEY,
+                                                 nom_zone VARCHAR(100) UNIQUE NOT NULL,
                 statut VARCHAR(20) DEFAULT 'activé'
-            );
+                );
         `;
 
-        // 2. عاد كنكرييو tarifs اللي كترتبط بـ zones
         const createTarifsTable = `
             CREATE TABLE IF NOT EXISTS tarifs (
-                id SERIAL PRIMARY KEY,
-                ref VARCHAR(50) UNIQUE NOT NULL, 
-                ville VARCHAR(100) UNIQUE NOT NULL, 
-                frais_livraison DECIMAL(10, 2) NOT NULL, 
+                                                  id SERIAL PRIMARY KEY,
+                                                  ref VARCHAR(50) UNIQUE NOT NULL,
+                ville VARCHAR(100) UNIQUE NOT NULL,
+                frais_livraison DECIMAL(10, 2) NOT NULL,
                 colis INTEGER DEFAULT 0,
                 zone_id INTEGER REFERENCES zones(id) ON DELETE SET NULL
-            );
+                );
         `;
 
         console.log("⏳ Création des tables en cours...");

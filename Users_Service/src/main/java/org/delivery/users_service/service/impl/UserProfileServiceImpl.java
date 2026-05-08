@@ -72,7 +72,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         securityReq.put("lastName", request.getLastName());
         securityReq.put("email", request.getEmail());
         securityReq.put("password", request.getPassword());
-        securityReq.put("role", Collections.singleton(request.getRole().name()));
+        securityReq.put("role", List.of(request.getRole().name()));
 
         // 🔥 Set firstLogin and active based on creator
         securityReq.put("firstLogin", isDirectAdminCreation);
@@ -90,13 +90,22 @@ public class UserProfileServiceImpl implements UserProfileService {
         UserProfile savedProfile = repository.save(profile);
 
         // 3. Event Handling
+        // 3. Event Handling - مع حماية من خطأ Kafka
+        // داخل createUserProfile، بعد حفظ المستخدم
         if (!isDirectAdminCreation) {
-            Map<String, Object> eventData = new HashMap<>();
-            eventData.put("email", request.getEmail());
-            eventData.put("type", "NEW_SIGNUP_REQUEST");
-            eventData.put("role", request.getRole().name());
-            eventData.put("userId", generatedUserId);
-            userEventProducer.sendUserCreatedEvent(eventData);
+            try {
+                Map<String, Object> eventData = new HashMap<>();
+                eventData.put("email", request.getEmail());
+                eventData.put("firstName", request.getFirstName());  // ✅ متأكد
+                eventData.put("lastName", request.getLastName());    // ✅ متأكد
+                eventData.put("type", "NEW_SIGNUP_REQUEST");
+                eventData.put("role", request.getRole().name());
+                eventData.put("userId", generatedUserId);
+                userEventProducer.sendUserCreatedEvent(eventData);
+                System.out.println("✅ Event sent for user: " + request.getEmail());
+            } catch (Exception e) {
+                System.err.println("⚠️ Kafka non disponible, mais compte créé: " + e.getMessage());
+            }
         }
 
         return mapper.toDTO(savedProfile);
@@ -182,16 +191,25 @@ public class UserProfileServiceImpl implements UserProfileService {
         if (!repository.existsById(id)) throw new NoSuchElementException("ID introuvable");
 
         UserProfile profile = repository.findById(id).orElse(null);
-        if (profile != null && profile.getProfileImageUrl() != null) {
+        if (profile != null) {
+            if (profile.getProfileImageUrl() != null) {
+                try {
+                    Path imagePath = Paths.get(UPLOAD_DIR).resolve(profile.getProfileImageUrl());
+                    Files.deleteIfExists(imagePath);
+                } catch (IOException e) {
+                    System.err.println("Could not delete image: " + e.getMessage());
+                }
+            }
             try {
-                Path imagePath = Paths.get(UPLOAD_DIR).resolve(profile.getProfileImageUrl());
-                Files.deleteIfExists(imagePath);
-            } catch (IOException e) {
-                System.err.println("Could not delete image: " + e.getMessage());
+                securityClient.deleteAccount(profile.getUserId());
+                System.out.println("✅ User deleted from Security Service: " + profile.getUserId());
+            } catch (Exception e) {
+                System.err.println("⚠️ Could not delete from Security Service: " + e.getMessage());
             }
         }
 
         repository.deleteById(id);
+        System.out.println("✅ Profile deleted: " + id);
     }
 
     @Override
