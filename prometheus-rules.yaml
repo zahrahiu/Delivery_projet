@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: delivery-alerts
+data:
+  delivery-alerts.yml: |
+    groups:
+      - name: delivery-system-alerts
+        rules:
+          # Alert si service down
+          - alert: ServiceDown
+            expr: up == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Service {{ $labels.application }} is down"
+              description: "Le service {{ $labels.application }} ({{ $labels.instance }}) est inaccessible depuis plus d'une minute."
+
+          # Alert si CPU trop élevé (Spring Boot)
+          - alert: HighCpuUsage
+            expr: rate(process_cpu_seconds_total[5m]) * 100 > 80
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "CPU élevé sur {{ $labels.application }}"
+              description: "Le CPU du service {{ $labels.application }} dépasse 80% pendant 2 minutes."
+
+          # Alert si beaucoup d'erreurs 401/403
+          - alert: HighAuthenticationErrors
+            expr: rate(http_server_requests_seconds_count{status=~"401|403"}[5m]) > 5
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Taux d'erreurs d'authentification élevé"
+              description: "Plus de 5 erreurs 401/403 par minute sur {{ $labels.application }}"
+
+          # Alert si service lents (plus de 2 secondes)
+          - alert: SlowResponses
+            expr: histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, application)) > 2
+            for: 3m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Service lent détecté"
+              description: "Le service {{ $labels.application }} a des réponses > 2s (95ème percentile)"

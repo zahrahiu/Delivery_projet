@@ -5,6 +5,9 @@ const path = require('path');
 const publicKey = fs.readFileSync(path.join(__dirname, '../keys/publicKey.pem'), 'utf8');
 
 const verifyToken = (req, res, next) => {
+    if (req.path === '/metrics') {
+        return next();
+    }
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 

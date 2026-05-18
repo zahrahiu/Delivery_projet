@@ -14,6 +14,11 @@ spec:
     metadata:
       labels:
         app: tracking-service
+
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8085"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: tracking-service
@@ -35,7 +40,13 @@ spec:
             - name: DB_PORT
               value: "27017"
             - name: KAFKA_BROKER
-              value: "kafka-service:9092"
+              value: "kafka:9092"
+            - name: ZIPKIN_URL
+              value: "http://zipkin:9411/api/v2/spans"
+            - name: OTEL_SERVICE_NAME
+              value: "tracking-service"
+            - name: OTEL_TRACES_EXPORTER
+              value: "zipkin"
           readinessProbe:
             tcpSocket:
               port: 8085

@@ -13,6 +13,11 @@ spec:
     metadata:
       labels:
         app: configuration-service
+
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9999"
+        prometheus.io/path: "/actuator/prometheus"
     spec:
       containers:
         - name: configuration-service
@@ -26,7 +31,6 @@ spec:
             - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
               value: "http://discovery-service:8761/eureka/"
 
-          # تغيير الـ Probes لـ tcpSocket كيعطي الوقت للسيرفيس يكمل الـ Boot ديالو براحتو
           livenessProbe:
             tcpSocket:
               port: 9999

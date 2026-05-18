@@ -73,7 +73,7 @@ public class SecurityConfig {
                         // السماح للمستندات والوثائق
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-
+                        .requestMatchers("/actuator/**").permitAll()
                         // 🔥🔥 التعديل المهم: السماح للتسجيل من غير JWT 🔥🔥
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/profiles").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/profiles/").permitAll()

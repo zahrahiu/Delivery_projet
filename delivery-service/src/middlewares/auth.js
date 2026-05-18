@@ -9,6 +9,11 @@ const publicKey = fs.readFileSync(
 );
 
 const authMiddleware = (req, res, next) => {
+
+
+    if (req.path === '/metrics' || req.path === '/actuator/prometheus') {
+        return next();
+    }
     const authHeader = req.headers["authorization"];
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {

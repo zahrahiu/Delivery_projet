@@ -15,7 +15,6 @@ async def start_kafka_listeners():
             topic = msg.topic
             print(f"📥 Received event from {topic}: {data}")
 
-            # هنا تقدري تزايدي Logic: مثلا إيلا تكريا Parcel جديد،
-            # السيرفيس ديال التتبع يجهز بلاصة فـ MongoDB
+
     finally:
         await consumer.stop()

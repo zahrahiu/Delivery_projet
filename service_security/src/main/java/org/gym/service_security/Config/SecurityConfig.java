@@ -80,6 +80,7 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/v1/users/login").permitAll()
                         .requestMatchers("/v1/users/refresh").permitAll()
                         .requestMatchers("/v1/users/register").permitAll()

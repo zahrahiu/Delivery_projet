@@ -49,7 +49,7 @@ public class SecurityConfig {
                 .authorizeExchange(exchanges -> exchanges
                         // OPTIONS dyal CORS
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
+                        .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/users-service/api/profiles/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/service-security/v1/users/register/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/service-security/v1/users/login/**").permitAll()

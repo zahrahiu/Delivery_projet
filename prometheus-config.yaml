@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 10s
+      evaluation_interval: 10s
+
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+
+    scrape_configs:
+      # Spring Boot Services
+      - job_name: 'gateway-service'
+        metrics_path: '/actuator/prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['gateway-service:8888']
+            labels:
+              application: 'gateway'
+              framework: 'spring-boot'
+    
+      - job_name: 'security-service'
+        metrics_path: '/actuator/prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['security-service:8080']
+            labels:
+              application: 'security'
+              framework: 'spring-boot'
+    
+      - job_name: 'users-service'
+        metrics_path: '/actuator/prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['users-service:8081']
+            labels:
+              application: 'users'
+              framework: 'spring-boot'
+    
+      - job_name: 'parcel-service'
+        metrics_path: '/actuator/prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['parcel-service:8082']
+            labels:
+              application: 'parcel'
+              framework: 'spring-boot'
+    
+      - job_name: 'configuration-service'
+        metrics_path: '/actuator/prometheus'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['configuration-service:9999']
+            labels:
+              application: 'configuration'
+              framework: 'spring-boot'
+
+      # Node.js Services
+      - job_name: 'delivery-service'
+        metrics_path: '/metrics'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['delivery-service:3001']
+            labels:
+              application: 'delivery'
+              framework: 'nodejs'
+    
+      - job_name: 'notification-service'
+        metrics_path: '/metrics'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['notification-service:5006']
+            labels:
+              application: 'notification'
+              framework: 'nodejs'
+    
+      - job_name: 'tarif-zone-service'
+        metrics_path: '/metrics'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['tarif-zone-service:5005']
+            labels:
+              application: 'tarif-zone'
+              framework: 'nodejs'
+
+      # Python Service
+      - job_name: 'tracking-service'
+        metrics_path: '/metrics'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['tracking-service:8085']
+            labels:
+              application: 'tracking'
+              framework: 'python'

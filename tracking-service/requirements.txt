@@ -9,3 +9,14 @@ fastapi
    py_zipkin
    requests
    kafka-python
+prometheus-client
+prometheus_client
+
+   aiozipkin  # نسخة async أحسن لـ FastAPI
+   opentelemetry-api
+   opentelemetry-sdk
+   opentelemetry-exporter-zipkin
+   opentelemetry-instrumentation-fastapi
+   opentelemetry-instrumentation-requests
+   opentelemetry-instrumentation-aiohttp-client
+   python-json-logger

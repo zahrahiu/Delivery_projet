@@ -1,7 +1,10 @@
+require('./tracing');
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Eureka } = require('eureka-js-client');
+const promClient = require('prom-client');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
@@ -14,6 +17,7 @@ const Notification = require('./models/Notification');
 
 const app = express();
 
+promClient.collectDefaultMetrics({ register: promClient.register });
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -27,6 +31,12 @@ const PORT = process.env.PORT || 5006;
 const HOST = process.env.HOST || 'localhost';
 const EUREKA_HOST = process.env.EUREKA_HOST || 'localhost';
 const EUREKA_PORT = process.env.EUREKA_PORT || 8761;
+
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
+});
+
 
 /* ===================== Swagger ===================== */
 const options = {
