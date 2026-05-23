@@ -8,6 +8,7 @@ import {
 import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
 import Swal from 'sweetalert2';
+import { useTheme } from "../../context/ThemeContext";
 
 interface Dispatcher {
     userId: number;
@@ -33,6 +34,8 @@ interface Props {
 }
 
 const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
+    const { darkMode, toggleTheme } = useTheme(); // ✅ جيب darkMode من Context
+
     const [dispatchers, setDispatchers] = useState<Dispatcher[]>([]);
     const [villes, setVilles] = useState<Ville[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -65,7 +68,6 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
     const API_URL = "http://localhost:8888/users-service/api/profiles";
     const TARIFS_API = "http://localhost:8888/tarif-zone-service/api/tarifs";
 
-    // 🔥 تصحيح: إرجاع config كامل وليس { headers: ... }
     const getAuthConfig = () => ({
         headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
@@ -183,7 +185,6 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Check password match only if provided (Create or Update)
         if (formData.password && formData.password !== formData.confirmPassword) {
             showToast('warning', 'Erreur', "Les mots de passe ne correspondent pas");
             return;
@@ -201,8 +202,6 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
             };
 
             if (isEditing) {
-
-
                 await axios.put(`${API_URL}/${formData.userId}`, finalPayload, getAuthConfigWithContentType());
                 showToast('success', 'Succès', "Dispatcher modifié ✅");
             } else {
@@ -238,13 +237,15 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f7fb' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: darkMode ? '#0f0f1a' : '#f5f7fb' }}>
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role="ADMIN" />
             <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <TopHeader
                     activeTab={activeTab}
                     isMenuOpen={isMenuOpen}
                     setIsMenuOpen={setIsMenuOpen}
+                    darkMode={darkMode}
+                    toggleTheme={toggleTheme}
                     user={{ firstName: 'Admin', lastName: '' }}
                 />
                 <div style={{ padding: '30px' }}>
@@ -273,7 +274,8 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
                                                 border: '1px solid #e0e0e0',
                                                 borderRadius: '12px',
                                                 fontSize: '14px',
-                                                background: 'white'
+                                                background: darkMode ? '#1a1a2e' : 'white',
+                                                color: darkMode ? '#eaeef2' : '#333'
                                             }}
                                         />
                                     </div>
@@ -293,7 +295,7 @@ const DispatchersTab: React.FC<Props> = ({ onDispatchersUpdate }) => {
                                         <tbody>
                                         {currentItems.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                                                <td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: darkMode ? '#8b92a5' : '#999' }}>
                                                     Aucun dispatcher trouvé
                                                 </td>
                                             </tr>

@@ -274,3 +274,110 @@
     font-size: 18px;
     color: #3b4e61;
 }
+
+/* ColisList.css - إضافة دعم Dark Mode */
+
+/* Dark Mode Styles for ColisList */
+.dark-theme .colis-list-container {
+    background: #0f0f1a !important;
+}
+
+.dark-theme .colis-list-header h2 {
+    color: #eaeef2 !important;
+}
+
+.dark-theme .search-input-group input {
+    background: #1a1a2e !important;
+    border-color: #3d3d5c !important;
+    color: #eaeef2 !important;
+}
+
+.dark-theme .search-input-group input::placeholder {
+    color: #6b7280 !important;
+}
+
+.dark-theme .search-icon-input {
+    color: #6b7280 !important;
+}
+
+.dark-theme .colis-table-wrapper {
+    background: #16213e !important;
+    border-color: #2d2d44 !important;
+}
+
+.dark-theme .colis-table th {
+    background: #1a1a2e !important;
+    color: #8b92a5 !important;
+    border-bottom-color: #2d2d44 !important;
+}
+
+.dark-theme .colis-table td {
+    color: #cbd5e1 !important;
+    border-bottom-color: #2d2d44 !important;
+}
+
+.dark-theme .colis-table tr:hover {
+    background: #1a1a2e !important;
+}
+
+.dark-theme .tracking-code {
+    background: #2d1b4e !important;
+    color: #a78bfa !important;
+}
+
+.dark-theme .livreur-cell {
+    color: #cbd5e1 !important;
+}
+
+.dark-theme .no-data {
+    color: #8b92a5 !important;
+}
+
+.dark-theme .back-btn {
+    background: #7367f0 !important;
+}
+
+.dark-theme .back-btn:hover {
+    background: #5e50ee !important;
+}
+
+/* Status Badges Dark Mode */
+.dark-theme .status-badge.delivered {
+    background: #1a3a1a !important;
+    color: #86efac !important;
+}
+
+.dark-theme .status-badge.assigned {
+    background: #1a2a4e !important;
+    color: #90caf9 !important;
+}
+
+.dark-theme .status-badge.in-transit {
+    background: #3a3a1a !important;
+    color: #fde047 !important;
+}
+
+.dark-theme .status-badge.pending {
+    background: #3a1a1a !important;
+    color: #fca5a5 !important;
+}
+
+/* Pagination Dark Mode */
+.dark-theme .page-btn {
+    background: #2d2d44 !important;
+    border-color: #3d3d5c !important;
+    color: #cbd5e1 !important;
+}
+
+.dark-theme .page-btn.active {
+    background: #7367f0 !important;
+    color: white !important;
+}
+
+.dark-theme .page-btn:hover:not(.active) {
+    background: #3d3d5c !important;
+}
+
+.dark-theme .page-btn:disabled {
+    opacity: 0.5;
+}

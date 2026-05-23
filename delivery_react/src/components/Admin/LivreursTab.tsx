@@ -8,6 +8,7 @@ import {
     FaMotorcycle, FaCar, FaTruck, FaUser, FaSearch
 } from "react-icons/fa";
 import Swal from 'sweetalert2';
+import { useTheme } from "../../context/ThemeContext";
 
 interface Livreur {
     userId: number;
@@ -27,6 +28,8 @@ interface Props {
 }
 
 const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
+    const { darkMode, toggleTheme } = useTheme(); // ✅ جيب darkMode من Context
+
     const [livreurs, setLivreurs] = useState<Livreur[]>([]);
     const [villes, setVilles] = useState<Ville[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -229,13 +232,15 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f7fb' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: darkMode ? '#0f0f1a' : '#f5f7fb' }}>
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role="ADMIN" />
             <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <TopHeader
                     activeTab={activeTab}
                     isMenuOpen={isMenuOpen}
                     setIsMenuOpen={setIsMenuOpen}
+                    darkMode={darkMode}
+                    toggleTheme={toggleTheme}
                     user={{ firstName: 'Admin', lastName: '' }}
                 />
                 <div style={{ padding: '30px' }}>
@@ -264,7 +269,8 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                                                 border: '1px solid #e0e0e0',
                                                 borderRadius: '12px',
                                                 fontSize: '14px',
-                                                background: 'white'
+                                                background: darkMode ? '#1a1a2e' : 'white',
+                                                color: darkMode ? '#eaeef2' : '#333'
                                             }}
                                         />
                                     </div>
@@ -284,11 +290,11 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                                         </thead>
                                         <tbody>
                                         {currentItems.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                                            <td>
+                                                <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: darkMode ? '#8b92a5' : '#999' }}>
                                                     Aucun livreur trouvé
                                                 </td>
-                                            </tr>
+                                            </td>
                                         ) : (
                                             currentItems.map((l) => (
                                                 <tr key={l.userId}>
@@ -297,7 +303,7 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                                                             <FaUser style={{ color: '#999' }} />
                                                             <strong>{l.firstName} {l.lastName}</strong>
                                                         </div>
-                                                        <small style={{ color: '#888' }}>{l.email}</small>
+                                                        <small style={{ color: darkMode ? '#8b92a5' : '#888' }}>{l.email}</small>
                                                     </td>
                                                     <td>{l.phone || '—'}</td>
                                                     <td>{l.cni || '—'}</td>
@@ -306,7 +312,7 @@ const LivreursTab: React.FC<Props> = ({ onLivreursUpdate }) => {
                                                             <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                                                 {getVehicleIcon(l.vehicleType)} {l.vehicleType}
                                                             </span>
-                                                        <small style={{ color: '#888' }}>{l.matricule}</small>
+                                                        <small style={{ color: darkMode ? '#8b92a5' : '#888' }}>{l.matricule}</small>
                                                     </td>
                                                     <td className="action-buttons">
                                                         <FaEye className="icon-view" title="Voir" onClick={() => { setSelectedLivreur(l); setShowDetails(true); }} />

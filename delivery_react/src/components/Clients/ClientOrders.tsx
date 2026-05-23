@@ -182,10 +182,15 @@ const ClientOrders: React.FC<ClientOrdersProps> = ({ parcels, onRefresh, onTrack
                                                         </div>
                                                     </div>
                                                     <div className="detail-row">
-                                                        <div className="detail-item small">
-                                                            <label>Poids</label>
-                                                            <p>{parcel.weight} kg</p>
-                                                        </div>
+
+                                                            <div className="detail-item small">
+                                                                <label>Poids</label>
+                                                                <p>{parcel.weight} kg</p>
+                                                            </div>
+                                                            <div className="detail-item small">
+                                                                <label>Prix livraison</label>
+                                                                <p style={{ color: '#e67e22', fontWeight: 'bold' }}>{parcel.deliveryPrice || 25} DH</p>
+                                                            </div>
                                                         <div className="detail-item small">
                                                             <label>Expéditeur</label>
                                                             <p>{parcel.senderName || "Non spécifié"}</p>

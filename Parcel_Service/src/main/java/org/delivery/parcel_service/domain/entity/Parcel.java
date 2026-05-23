@@ -35,6 +35,16 @@ public class Parcel {
     @Column(columnDefinition = "TEXT")
     private String signature;
 
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
+
     private LocalDateTime deliveredAt;
     private String deliveryNotes;
 
@@ -98,4 +108,8 @@ public class Parcel {
 
     public String getDeliveryNotes() { return deliveryNotes; }
     public void setDeliveryNotes(String deliveryNotes) { this.deliveryNotes = deliveryNotes; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
 }

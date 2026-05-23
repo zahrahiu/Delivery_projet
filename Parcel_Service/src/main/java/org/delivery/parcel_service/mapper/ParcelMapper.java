@@ -50,7 +50,7 @@ dto.setCityName(parcel.getCityName());
         dto.setSignature(parcel.getSignature());
         dto.setDeliveryAddress(parcel.getDeliveryAddress());
         dto.setClientName(parcel.getClientName());
-
+        dto.setCreatedAt(parcel.getCreatedAt());
 
         // زيدي هاد السطر باش Node.js يلقى الإيميل:
         dto.setClientEmail(parcel.getClientEmail()); // رديها clientEmail

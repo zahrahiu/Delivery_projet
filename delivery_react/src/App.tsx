@@ -22,7 +22,11 @@ import VillesManagement from "./components/Admin/VillesTab";
 import ZonesManagement from "./components/Admin/ZonesTab";
 import ColisList from "./components/Admin/ColisList";
 import LivreurList from "./components/Dispatchers/LivreurList";
+import Tournees from "./components/Dispatchers/Tournees";
+
+import { ThemeProvider } from "./context/ThemeContext";
 import axios from "axios";
+import Incidents from "./components/Dispatchers/Incidents";
 
 function App() {
 
@@ -49,6 +53,7 @@ function App() {
     }, [fetchNotifications]);
 
     return (
+        <ThemeProvider>
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Home />} />
@@ -67,7 +72,8 @@ function App() {
 
                 {/* Routes DISPATCHER */}
                 <Route path="/dispatcher/*" element={<ProtectedRoute allowedRoles={["DISPATCHER"]}><DispatcherDashboard /></ProtectedRoute>} />
-
+                <Route path="/dispatcher/tournees" element={<ProtectedRoute allowedRoles={["DISPATCHER"]}><Tournees /></ProtectedRoute>} />
+                <Route path="/dispatcher/incidents" element={<ProtectedRoute allowedRoles={["DISPATCHER"]}><Incidents /></ProtectedRoute>} />
                 {/* Routes LIVREUR */}
                 <Route path="/livreur/*" element={<ProtectedRoute allowedRoles={["LIVREUR"]}><LivreurDashboard /></ProtectedRoute>} />
 
@@ -84,6 +90,7 @@ function App() {
             </Routes>
 
         </BrowserRouter>
+        </ThemeProvider>
     );
 }
 

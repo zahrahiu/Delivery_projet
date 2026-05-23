@@ -26,6 +26,8 @@ public class ParcelResponseDTO {
     private String signature;        // التوقيع (Base64)
     private LocalDateTime deliveredAt; // تاريخ التسليم
     private String deliveryNotes;
+    private LocalDateTime createdAt;
+
 
     public Long getId() {
         return id;
@@ -169,5 +171,13 @@ public class ParcelResponseDTO {
 
     public void setDeliveryNotes(String deliveryNotes) {
         this.deliveryNotes = deliveryNotes;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -100,7 +100,7 @@ public class ParcelServiceImpl implements ParcelService {
     public void assignToLivreur(Long id, String livreurId) {
         Parcel parcel = parcelRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
         parcel.setAssignedLivreurId(livreurId);
-        parcel.setStatus(ParcelStatus.IN_TRANSIT);
+        parcel.setStatus(ParcelStatus.ASSIGNED);
         parcelRepository.save(parcel);
     }
 

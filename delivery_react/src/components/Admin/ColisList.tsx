@@ -3,6 +3,7 @@ import axios from "axios";
 import { FaArrowLeft, FaSearch, FaTruck, FaUser, FaBox } from "react-icons/fa";
 import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
+import { useTheme } from "../../context/ThemeContext";
 import "./ColisList.css";
 
 interface Parcel {
@@ -26,6 +27,8 @@ interface Livreur {
 }
 
 const ColisList: React.FC = () => {
+    const { darkMode, toggleTheme } = useTheme(); // ✅ استعملي الـ Context
+
     const [parcels, setParcels] = useState<Parcel[]>([]);
     const [filteredParcels, setFilteredParcels] = useState<Parcel[]>([]);
     const [livreurs, setLivreurs] = useState<Livreur[]>([]);
@@ -34,7 +37,6 @@ const ColisList: React.FC = () => {
     const [searchLivreur, setSearchLivreur] = useState("");
     const [activeTab, setActiveTab] = useState("colis");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [darkMode, setDarkMode] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -105,23 +107,6 @@ const ColisList: React.FC = () => {
         }
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return 'N/A';
-        try {
-            return new Date(dateString).toLocaleDateString('fr-FR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch {
-            return 'N/A';
-        }
-    };
-
-    const toggleTheme = () => setDarkMode(!darkMode);
-
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredParcels.slice(indexOfFirstItem, indexOfLastItem);
@@ -150,7 +135,6 @@ const ColisList: React.FC = () => {
 
     return (
         <div className={`app-container ${darkMode ? 'dark-theme' : ''}`}>
-            {/* TopHeader en haut */}
             <TopHeader
                 activeTab={activeTab}
                 isMenuOpen={isMenuOpen}
@@ -180,6 +164,11 @@ const ColisList: React.FC = () => {
                                     placeholder="🔍 Rechercher par Tracking..."
                                     value={searchTracking}
                                     onChange={(e) => setSearchTracking(e.target.value)}
+                                    style={{
+                                        background: darkMode ? '#1a1a2e' : 'white',
+                                        color: darkMode ? '#eaeef2' : '#333',
+                                        borderColor: darkMode ? '#3d3d5c' : '#e0e0e0'
+                                    }}
                                 />
                             </div>
                             <div className="search-input-group">
@@ -189,6 +178,11 @@ const ColisList: React.FC = () => {
                                     placeholder="👤 Rechercher par Livreur..."
                                     value={searchLivreur}
                                     onChange={(e) => setSearchLivreur(e.target.value)}
+                                    style={{
+                                        background: darkMode ? '#1a1a2e' : 'white',
+                                        color: darkMode ? '#eaeef2' : '#333',
+                                        borderColor: darkMode ? '#3d3d5c' : '#e0e0e0'
+                                    }}
                                 />
                             </div>
                         </div>
@@ -220,7 +214,7 @@ const ColisList: React.FC = () => {
                                             </td>
                                             <td>
                                                 <div style={{ fontWeight: 500 }}>{parcel.senderName || 'N/A'}</div>
-                                                <small style={{ color: '#888' }}>{parcel.clientEmail || ''}</small>
+                                                <small style={{ color: darkMode ? '#8b92a5' : '#888' }}>{parcel.clientEmail || ''}</small>
                                             </td>
                                             <td>
                                                 <div className="livreur-cell">
@@ -240,11 +234,38 @@ const ColisList: React.FC = () => {
 
                         {totalPages > 1 && (
                             <div className="pagination">
-                                <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>←</button>
+                                <button
+                                    className="page-btn"
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(currentPage - 1)}
+                                    style={{
+                                        background: darkMode ? '#2d2d44' : 'white',
+                                        color: darkMode ? '#eaeef2' : '#333',
+                                        borderColor: darkMode ? '#3d3d5c' : '#e0e0e0'
+                                    }}
+                                >←</button>
                                 {Array.from({ length: totalPages }, (_, i) => (
-                                    <button key={i + 1} className={`page-btn ${currentPage === i + 1 ? 'active' : ''}`} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
+                                    <button
+                                        key={i + 1}
+                                        className={`page-btn ${currentPage === i + 1 ? 'active' : ''}`}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        style={{
+                                            background: currentPage === i + 1 ? '#7367f0' : (darkMode ? '#2d2d44' : 'white'),
+                                            color: currentPage === i + 1 ? 'white' : (darkMode ? '#eaeef2' : '#333'),
+                                            borderColor: darkMode ? '#3d3d5c' : '#e0e0e0'
+                                        }}
+                                    >{i + 1}</button>
                                 ))}
-                                <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>→</button>
+                                <button
+                                    className="page-btn"
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(currentPage + 1)}
+                                    style={{
+                                        background: darkMode ? '#2d2d44' : 'white',
+                                        color: darkMode ? '#eaeef2' : '#333',
+                                        borderColor: darkMode ? '#3d3d5c' : '#e0e0e0'
+                                    }}
+                                >→</button>
                             </div>
                         )}
                     </div>

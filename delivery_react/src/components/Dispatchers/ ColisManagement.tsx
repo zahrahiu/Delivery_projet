@@ -4,7 +4,8 @@ import Swal from 'sweetalert2';
 import {
     FaPlus, FaEdit, FaTrash, FaBoxOpen,
     FaTruck, FaCheckCircle, FaSearch, FaUserPlus, FaTimes, FaSpinner,
-    FaClock, FaBan, FaUndoAlt, FaChevronLeft, FaChevronRight
+    FaClock, FaBan, FaUndoAlt, FaChevronLeft, FaChevronRight,
+    FaFileExcel, FaFilter
 } from "react-icons/fa";
 import UpdateColisForm from "./UpdateColisForm";
 import "./ColisManagement.css";
@@ -14,27 +15,44 @@ interface ColisProps {
     onEditClick?: (parcel: any) => void;
 }
 
+interface LivreurWithStats {
+    userId: number;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    zone: string;
+    vehicleType: string;
+    totalParcels: number;
+    pendingCount: number;
+    inTransitCount: number;
+    deliveredCount: number;
+    status: "free" | "busy" | "full";
+}
+
 const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
     const [parcels, setParcels] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [selectedParcel, setSelectedParcel] = useState<any>(null);
     const [livreurs, setLivreurs] = useState<any[]>([]);
-    const [allLivreurs, setAllLivreurs] = useState<any[]>([]); // 🔥 Garder tous les livreurs
+    const [allLivreurs, setAllLivreurs] = useState<any[]>([]);
+    const [zones, setZones] = useState<any[]>([]);
+    const [allParcelsForStats, setAllParcelsForStats] = useState<any[]>([]);
 
-    // Pagination
+    const [filterUnassigned, setFilterUnassigned] = useState(false);
+
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 7;
 
-    // Modal d'assignation
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [selectedParcelForAssign, setSelectedParcelForAssign] = useState<any>(null);
     const [selectedDriver, setSelectedDriver] = useState("");
     const [isAssigning, setIsAssigning] = useState(false);
-    const [filteredLivreursForZone, setFilteredLivreursForZone] = useState<any[]>([]);
+    const [filteredLivreursForZone, setFilteredLivreursForZone] = useState<LivreurWithStats[]>([]);
 
     const PARCEL_API = "http://localhost:8888/parcel-service/api/parcels";
     const USERS_API = "http://localhost:8888/users-service/api/profiles";
+    const ZONES_API = "http://localhost:8888/tarif-zone-service/api/zones";
 
     const token = localStorage.getItem("token");
     const getHeaders = () => ({
@@ -44,8 +62,10 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
     const fetchParcels = async () => {
         try {
             const res = await axios.get(PARCEL_API, getHeaders());
-            setParcels(Array.isArray(res.data) ? res.data : []);
-            console.log("Parcels Loaded:", res.data);
+            const parcelsData = Array.isArray(res.data) ? res.data : [];
+            setParcels(parcelsData);
+            setAllParcelsForStats(parcelsData);
+            console.log("Parcels Loaded:", parcelsData);
         } catch (err) {
             console.error("Error fetching parcels:", err);
         }
@@ -64,23 +84,125 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
         }
     };
 
+    const fetchZones = async () => {
+        try {
+            const res = await axios.get(ZONES_API, getHeaders());
+            setZones(Array.isArray(res.data) ? res.data : []);
+            console.log("Zones Loaded:", res.data);
+        } catch (err) {
+            console.error("Error fetching zones:", err);
+        }
+    };
+
     useEffect(() => {
         fetchParcels();
         fetchLivreurs();
+        fetchZones();
     }, []);
 
-    // 🔥 Filtrer les livreurs par zone (ville) du colis
-    const filterLivreursByZone = (parcelCity: string) => {
-        if (!parcelCity) return allLivreurs;
-        return allLivreurs.filter(l =>
-            l.zone?.toLowerCase() === parcelCity.toLowerCase()
-        );
+    // 🔥 إضافة مستمع للأحداث من Incidents
+    useEffect(() => {
+        const handleParcelsUpdate = () => {
+            console.log("🔄 Refreshing parcels after incident update...");
+            fetchParcels();
+        };
+
+        window.addEventListener('parcelsUpdated', handleParcelsUpdate);
+
+        return () => {
+            window.removeEventListener('parcelsUpdated', handleParcelsUpdate);
+        };
+    }, []);
+
+    const getZoneCities = (cityName: string): string[] => {
+        if (!cityName || zones.length === 0) return [cityName];
+
+        const foundZone = zones.find((z: any) => {
+            if (!z.villes_list || z.villes_list.length === 0) return false;
+            return z.villes_list.some((ville: string) =>
+                ville.toLowerCase() === cityName.toLowerCase()
+            );
+        });
+
+        if (foundZone && foundZone.villes_list) {
+            console.log(`📍 Zone: ${foundZone.nom_zone}, Cities:`, foundZone.villes_list);
+            return foundZone.villes_list;
+        }
+
+        return [cityName];
     };
 
-    // 🔥 Calcul des statistiques
+    const getFilteredLivreursWithStats = (parcelCity: string): LivreurWithStats[] => {
+        if (!parcelCity) return [];
+
+        const zoneCities = getZoneCities(parcelCity);
+        const zoneCitiesLower = zoneCities.map(c => c.toLowerCase());
+
+        const livreursInZone = allLivreurs.filter(l => {
+            const livreurCity = (l.zone || l.city || "").toLowerCase();
+            return zoneCitiesLower.includes(livreurCity);
+        });
+
+        return livreursInZone.map((l: any) => {
+            const livreurParcels = allParcelsForStats.filter(p =>
+                String(p.assignedLivreurId || p.livreurId || p.assignedLivreur?.userId) === String(l.userId)
+            );
+
+            const totalParcels = livreurParcels.length;
+            const pendingCount = livreurParcels.filter(p =>
+                p.status === 'PENDING' || p.status === 'ASSIGNED'
+            ).length;
+            const inTransitCount = livreurParcels.filter(p =>
+                p.status === 'IN_TRANSIT'
+            ).length;
+            const deliveredCount = livreurParcels.filter(p =>
+                p.status === 'DELIVERED'
+            ).length;
+
+            let status: "free" | "busy" | "full" = "free";
+            if (inTransitCount >= 3) {
+                status = "full";
+            } else if (pendingCount > 0 || inTransitCount > 0) {
+                status = "busy";
+            }
+
+            return {
+                userId: l.userId,
+                firstName: l.firstName,
+                lastName: l.lastName,
+                phone: l.phone,
+                zone: l.zone || l.city,
+                vehicleType: l.vehicleType || "Moto",
+                totalParcels,
+                pendingCount,
+                inTransitCount,
+                deliveredCount,
+                status
+            };
+        }).sort((a, b) => {
+            const aIsSameCity = (a.zone || "").toLowerCase() === parcelCity.toLowerCase();
+            const bIsSameCity = (b.zone || "").toLowerCase() === parcelCity.toLowerCase();
+            if (aIsSameCity && !bIsSameCity) return -1;
+            if (!aIsSameCity && bIsSameCity) return 1;
+            const order = { free: 0, busy: 1, full: 2 };
+            return order[a.status] - order[b.status];
+        });
+    };
+
+    const hasLivreur = (parcel: any): boolean => {
+        const livreurId = parcel.assignedLivreurId ||
+            parcel.livreurId ||
+            parcel.assignedLivreur?.userId ||
+            parcel.livreur?.userId;
+        return livreurId !== null &&
+            livreurId !== undefined &&
+            livreurId !== "null" &&
+            livreurId !== "";
+    };
+
     const stats = {
-        pending: parcels.filter(p => p.status === 'PENDING').length,
-        assigned: parcels.filter(p => p.status === 'ASSIGNED').length,
+        pending: parcels.filter(p => !hasLivreur(p) || p.status === 'PENDING').length,
+        assigned: parcels.filter(p => hasLivreur(p) && p.status === 'ASSIGNED').length,
         inTransit: parcels.filter(p => p.status === 'IN_TRANSIT').length,
         delivered: parcels.filter(p => p.status === 'DELIVERED').length,
         returned: parcels.filter(p => p.status === 'RETURNED').length,
@@ -88,28 +210,30 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
         total: parcels.length
     };
 
-    // Vérifier si le colis a un livreur assigné
     const isParcelAssigned = (parcel: any): boolean => {
-        const idFromParcel =
-            (parcel.assignedLivreur && (parcel.assignedLivreur.userId || parcel.assignedLivreur.id)) ||
-            (parcel.livreur && (parcel.livreur.userId || parcel.livreur.id)) ||
-            parcel.assignedLivreurId ||
-            parcel.livreurId;
+        const idFromParcel = parcel.assignedLivreurId ||
+            parcel.livreurId ||
+            parcel.assignedLivreur?.userId ||
+            parcel.livreur?.userId;
 
-        return !!idFromParcel && idFromParcel !== null && idFromParcel !== "";
+        return idFromParcel !== null &&
+            idFromParcel !== undefined &&
+            idFromParcel !== "null" &&
+            idFromParcel !== "";
     };
 
+    // 🔥 دالة getLivreurName المصححة
     const getLivreurName = (parcel: any) => {
-        const idFromParcel =
-            (parcel.assignedLivreur && (parcel.assignedLivreur.userId || parcel.assignedLivreur.id)) ||
-            (parcel.livreur && (parcel.livreur.userId || parcel.livreur.id)) ||
-            parcel.assignedLivreurId ||
-            parcel.livreurId;
+        const livreurId = parcel.assignedLivreurId ||
+            parcel.livreurId ||
+            parcel.assignedLivreur?.userId ||
+            parcel.livreur?.userId;
 
-        if (!idFromParcel) return <span className="no-livreur">Non assigné</span>;
+        if (!livreurId || livreurId === "null" || livreurId === "undefined" || livreurId === "") {
+            return <span className="no-livreur">Non assigné</span>;
+        }
 
-        const targetId = String(idFromParcel);
-        const driver = allLivreurs.find(l => String(l.userId) === targetId);
+        const driver = allLivreurs.find(l => String(l.userId) === String(livreurId));
 
         if (driver) {
             return (
@@ -119,7 +243,7 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
             );
         }
 
-        return <span className="id-fallback" style={{color: 'orange'}}>ID: {targetId}</span>;
+        return <span className="no-livreur">Non assigné</span>;
     };
 
     const handleDelete = async (id: number) => {
@@ -142,34 +266,47 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
         }
     };
 
-    const updateStatus = async (parcel: any, newStatus: string) => {
-        try {
-            await axios.patch(`${PARCEL_API}/${parcel.id}/status?status=${newStatus}`, {}, getHeaders());
-            setParcels(prev => prev.map(p => p.id === parcel.id ? { ...p, status: newStatus } : p));
+    // 🔥 دالة getStatusBadge المصححة
+    const getStatusBadge = (parcel: any) => {
+        const status = parcel.status || 'PENDING';
+        const livreurId = parcel.assignedLivreurId ||
+            parcel.livreurId ||
+            parcel.assignedLivreur?.userId ||
+            parcel.livreur?.userId;
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Statut mis à jour !',
-                toast: true,
-                position: 'top-end',
-                timer: 1500,
-                showConfirmButton: false
-            });
-        } catch (err) {
-            Swal.fire('Erreur', 'Modification échouée', 'error');
+        const hasLivreur = livreurId !== null &&
+            livreurId !== undefined &&
+            livreurId !== "null" &&
+            livreurId !== "";
+
+        // إذا ماعندوش livreur → En attente
+        if (!hasLivreur) {
+            return <span className="status-badge pending">⌛ En attente</span>;
+        }
+
+        switch (status) {
+            case 'PENDING':
+                return <span className="status-badge pending">⌛ En attente</span>;
+            case 'ASSIGNED':
+                return <span className="status-badge assigned">👤 Assigné</span>;
+            case 'IN_TRANSIT':
+                return <span className="status-badge in_transit">🚚 En transit</span>;
+            case 'DELIVERED':
+                return <span className="status-badge delivered">✅ Livré</span>;
+            case 'RETURNED':
+                return <span className="status-badge returned">↩️ Retourné</span>;
+            case 'CANCELLED':
+                return <span className="status-badge cancelled">❌ Annulé</span>;
+            default:
+                return <span className="status-badge pending">⌛ En attente</span>;
         }
     };
 
-    // 🔥 Fonction d'assignation avec filtre par zone
-    const handleAssignClick = (parcel: any) => {
+    const handleAssignClick = async (parcel: any) => {
         setSelectedParcelForAssign(parcel);
         setSelectedDriver("");
-
-        // Filtrer les livreurs par la ville du colis
-        const parcelCity = parcel.cityName || "";
-        const filtered = filterLivreursByZone(parcelCity);
-        setFilteredLivreursForZone(filtered);
-
+        const livreursWithStats = getFilteredLivreursWithStats(parcel.cityName || "");
+        setFilteredLivreursForZone(livreursWithStats);
         setShowAssignModal(true);
     };
 
@@ -187,16 +324,24 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                 getHeaders()
             );
 
+            await axios.patch(
+                `${PARCEL_API}/${selectedParcelForAssign.id}/status?status=ASSIGNED`,
+                {},
+                getHeaders()
+            );
+
+            await fetchParcels();
+
             Swal.fire({
                 icon: 'success',
-                title: 'Assigné !',
-                text: `Colis ${selectedParcelForAssign.trackingNumber} assigné au livreur`,
+                title: '✅ Colis Assigné !',
+                text: `Le colis ${selectedParcelForAssign.trackingNumber} est maintenant assigné.\nStatut: ASSIGNED`,
                 timer: 2000,
                 showConfirmButton: false
             });
 
             setShowAssignModal(false);
-            fetchParcels(); // Rafraîchir la liste
+
         } catch (err) {
             console.error("Erreur assignation:", err);
             Swal.fire('Erreur', 'Impossible d\'assigner le colis', 'error');
@@ -205,13 +350,100 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
         }
     };
 
-    // 🔥 Filtrer par recherche
-    const filteredParcels = parcels.filter(p =>
-        p.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.senderName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const exportToExcel = () => {
+        const exportData = filteredParcels.map(p => ({
+            'Code Suivi': p.trackingNumber,
+            'Client': p.senderName,
+            'Livreur': getLivreurNameString(p),
+            'Adresse': p.deliveryAddress,
+            'Poids (kg)': p.weight,
+            'État': getStatusText(p.status),
+            'Ville': p.cityName || '',
+            'Date création': p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR') : ''
+        }));
 
-    // 🔥 Pagination
+        if (exportData.length === 0) {
+            Swal.fire('Info', 'Aucune donnée à exporter', 'info');
+            return;
+        }
+
+        const headers = Object.keys(exportData[0] || {});
+        const csvRows = [];
+        csvRows.push(headers.join(';'));
+
+        for (const row of exportData) {
+            const values = headers.map(header => {
+                const value = row[header as keyof typeof row] || '';
+                return `"${String(value).replace(/"/g, '""')}"`;
+            });
+            csvRows.push(values.join(';'));
+        }
+
+        const blob = new Blob(["\uFEFF" + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `colis_${new Date().toLocaleDateString('fr-FR')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Export terminé',
+            text: `${exportData.length} colis exportés vers Excel`,
+            timer: 2000,
+            showConfirmButton: false
+        });
+    };
+
+    const getStatusText = (status: string): string => {
+        switch(status) {
+            case 'PENDING': return 'En attente';
+            case 'ASSIGNED': return 'Assigné';
+            case 'IN_TRANSIT': return 'En transit';
+            case 'DELIVERED': return 'Livré';
+            case 'RETURNED': return 'Retourné';
+            case 'CANCELLED': return 'Annulé';
+            default: return status;
+        }
+    };
+
+    const getLivreurNameString = (parcel: any): string => {
+        const idFromParcel = parcel.assignedLivreurId ||
+            parcel.livreurId ||
+            parcel.assignedLivreur?.userId ||
+            parcel.livreur?.userId;
+
+        if (!idFromParcel || idFromParcel === null || idFromParcel === "null" || idFromParcel === "") {
+            return "Non assigné";
+        }
+
+        const targetId = String(idFromParcel);
+        const driver = allLivreurs.find(l => String(l.userId) === targetId);
+
+        if (driver) {
+            return `${driver.firstName} ${driver.lastName}`;
+        }
+
+        return "Non assigné";
+    };
+
+    const filteredParcels = parcels.filter(p => {
+        const matchesSearch = p.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.senderName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        if (filterUnassigned) {
+            const isAssigned = isParcelAssigned(p);
+            return !isAssigned;
+        }
+
+        return true;
+    });
+
     const totalPages = Math.ceil(filteredParcels.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -254,10 +486,9 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
 
     return (
         <div className="colis-admin-container">
-            {/* Modal d'assignation */}
             {showAssignModal && selectedParcelForAssign && (
                 <div className="assign-modal-overlay" onClick={() => setShowAssignModal(false)}>
-                    <div className="assign-modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="assign-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '550px' }}>
                         <div className="assign-modal-header">
                             <h3>🚚 Assigner un livreur</h3>
                             <button className="assign-close-btn" onClick={() => setShowAssignModal(false)}>
@@ -274,21 +505,33 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                                 <label>Sélectionner un livreur :</label>
                                 {filteredLivreursForZone.length === 0 ? (
                                     <div className="no-livreurs-warning">
-                                        ⚠️ Aucun livreur disponible pour la ville <strong>{selectedParcelForAssign.cityName}</strong>
+                                        ⚠️ Aucun livreur disponible pour cette zone
                                     </div>
                                 ) : (
-                                    <select
-                                        value={selectedDriver}
-                                        onChange={(e) => setSelectedDriver(e.target.value)}
-                                        className="assign-select"
-                                    >
-                                        <option value="">-- Choisir un livreur --</option>
-                                        {filteredLivreursForZone.map((livreur) => (
-                                            <option key={livreur.userId} value={livreur.userId}>
-                                                {livreur.firstName} {livreur.lastName} - 📍 {livreur.zone || "Zone non définie"}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <>
+                                        <select
+                                            value={selectedDriver}
+                                            onChange={(e) => setSelectedDriver(e.target.value)}
+                                            className="assign-select"
+                                            style={{ marginBottom: '10px' }}
+                                        >
+                                            <option value="">-- Choisir un livreur --</option>
+                                            {filteredLivreursForZone.map((livreur) => (
+                                                <option key={livreur.userId} value={livreur.userId}>
+                                                    {livreur.firstName} {livreur.lastName} - 📍 {livreur.zone}
+                                                    {' | '}
+                                                    {livreur.totalParcels > 0 ? `📦 ${livreur.totalParcels} colis` : '📦 Aucun colis'}
+                                                    {livreur.pendingCount > 0 ? ` (${livreur.pendingCount} en attente)` : ''}
+                                                    {livreur.inTransitCount > 0 ? ` | 🚚 ${livreur.inTransitCount} en cours` : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="drivers-stats-row">
+                                            <div className="stat-badge free">🟢 Libres: {filteredLivreursForZone.filter(d => d.status === 'free').length}</div>
+                                            <div className="stat-badge busy">🟡 En cours: {filteredLivreursForZone.filter(d => d.status === 'busy').length}</div>
+                                            <div className="stat-badge full">🔴 Complets: {filteredLivreursForZone.filter(d => d.status === 'full').length}</div>
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -310,12 +553,27 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
 
             <div className="colis-header">
                 <h2>📦 Gestion des Colis</h2>
-                <button className="btn-add" onClick={onAddClick}>
-                    <FaPlus /> Nouveau Colis
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button className="btn-excel" onClick={exportToExcel} style={{
+                        background: '#1e7e34',
+                        color: 'white',
+                        border: 'none',
+                        padding: '10px 16px',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontWeight: 500
+                    }}>
+                        <FaFileExcel /> Export Excel
+                    </button>
+                    <button className="btn-add" onClick={onAddClick}>
+                        <FaPlus /> Nouveau Colis
+                    </button>
+                </div>
             </div>
 
-            {/* Stats */}
             <div className="stats-grid-new">
                 <div className="stat-card-new pending">
                     <div className="stat-icon-new"><FaClock /></div>
@@ -361,13 +619,36 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                 </div>
             </div>
 
-            <div className="search-bar-container shadow-sm">
-                <FaSearch className="search-icon" />
-                <input
-                    placeholder="Rechercher par tracking ou nom de client..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+            <div className="search-bar-container shadow-sm" style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                    <FaSearch className="search-icon" style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)' }} />
+                    <input
+                        placeholder="Rechercher par tracking ou nom de client..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{ paddingLeft: '40px', width: '100%' }}
+                    />
+                </div>
+
+                <button
+                    onClick={() => setFilterUnassigned(!filterUnassigned)}
+                    className={`filter-unassigned-btn ${filterUnassigned ? 'active' : ''}`}
+                    style={{
+                        background: filterUnassigned ? '#7367f0' : '#f0f0f0',
+                        color: filterUnassigned ? 'white' : '#4D5C71',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '30px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontWeight: 500,
+                        transition: 'all 0.3s'
+                    }}
+                >
+                    <FaFilter /> Non assignés {filterUnassigned && `(${filteredParcels.length})`}
+                </button>
             </div>
 
             <div className="table-container shadow-sm">
@@ -387,6 +668,7 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                     {currentParcels.length > 0 ? (
                         currentParcels.map((p) => {
                             const isAssigned = isParcelAssigned(p);
+                            const showAssignButton = !isAssigned && p.status !== 'DELIVERED' && p.status !== 'CANCELLED' && p.status !== 'RETURNED';
                             return (
                                 <tr key={p.id}>
                                     <td><span className="tracking-code">{p.trackingNumber}</span></td>
@@ -399,24 +681,10 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                                     </td>
                                     <td>{p.deliveryAddress?.substring(0, 50)}...</td>
                                     <td>{p.weight} kg</td>
-                                    <td>
-                                        <select
-                                            className={`status-select-mini ${p.status?.toLowerCase() || ''}`}
-                                            value={p.status || 'PENDING'}
-                                            onChange={(e) => updateStatus(p, e.target.value)}
-                                            disabled={!isAssigned && p.status !== 'PENDING' && p.status !== 'RETURNED'}
-                                        >
-                                            <option value="PENDING">⌛ En attente</option>
-                                            <option value="ASSIGNED">👤 Assigné</option>
-                                            <option value="IN_TRANSIT">🚚 En transit</option>
-                                            <option value="DELIVERED">✅ Livré</option>
-                                            <option value="RETURNED">↩️ Retourné</option>
-                                            <option value="CANCELLED">❌ Annulé</option>
-                                        </select>
-                                    </td>
+                                    <td>{getStatusBadge(p)}</td>
                                     <td className="text-center">
                                         <div className="action-buttons-group">
-                                            {!isAssigned && p.status === 'PENDING' && (
+                                            {showAssignButton && (
                                                 <button
                                                     className="assign-icon-btn"
                                                     onClick={() => handleAssignClick(p)}
@@ -441,20 +709,15 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                             );
                         })
                     ) : (
-                        <tr><td colSpan={7} className="text-center">Aucun colis trouvé.</td></tr>
+                        <tr><td colSpan={7} className="text-center">Aucun colis trouvé.诊</td></tr>
                     )}
                     </tbody>
                 </table>
             </div>
 
-            {/* 🔥 Pagination */}
             {totalPages > 1 && (
                 <div className="pagination-container-colis">
-                    <button
-                        className="pagination-btn"
-                        onClick={prevPage}
-                        disabled={currentPage === 1}
-                    >
+                    <button className="pagination-btn" onClick={prevPage} disabled={currentPage === 1}>
                         <FaChevronLeft /> Précédent
                     </button>
                     <div className="pagination-pages">
@@ -468,11 +731,7 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                             </button>
                         ))}
                     </div>
-                    <button
-                        className="pagination-btn"
-                        onClick={nextPage}
-                        disabled={currentPage === totalPages}
-                    >
+                    <button className="pagination-btn" onClick={nextPage} disabled={currentPage === totalPages}>
                         Suivant <FaChevronRight />
                     </button>
                 </div>
@@ -502,8 +761,17 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                     background: #5e4ee0;
                     transform: scale(1.05);
                 }
-                
-                /* Stats */
+                .btn-excel:hover {
+                    background: #155a29;
+                    transform: scale(1.02);
+                }
+                .filter-unassigned-btn {
+                    transition: all 0.3s;
+                }
+                .filter-unassigned-btn:hover:not(.active) {
+                    background: #e0e0e0;
+                    transform: scale(1.02);
+                }
                 .stats-grid-new {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -531,7 +799,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                 .stat-card-new.delivered { border-left-color: #27ae60; }
                 .stat-card-new.returned { border-left-color: #e74c3c; }
                 .stat-card-new.cancelled { border-left-color: #95a5a6; }
-                
                 .stat-icon-new {
                     width: 50px;
                     height: 50px;
@@ -547,7 +814,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                 .stat-card-new.delivered .stat-icon-new { background: #e8f5e9; color: #27ae60; }
                 .stat-card-new.returned .stat-icon-new { background: #fce4ec; color: #e74c3c; }
                 .stat-card-new.cancelled .stat-icon-new { background: #ecf0f1; color: #95a5a6; }
-                
                 .stat-info-new h3 {
                     margin: 0;
                     font-size: 28px;
@@ -559,24 +825,19 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                     font-size: 12px;
                     color: #A5AEAD;
                 }
-                
-                /* Status select */
-                .status-select-mini {
-                    padding: 6px 10px;
+                .status-badge {
+                    padding: 6px 12px;
                     border-radius: 20px;
-                    border: 1px solid #ddd;
                     font-size: 12px;
-                    cursor: pointer;
-                    background: white;
+                    font-weight: 600;
+                    display: inline-block;
                 }
-                .status-select-mini.pending { background: #fef3e2; color: #f39c12; border-color: #f39c12; }
-                .status-select-mini.assigned { background: #e3f2fd; color: #3498db; border-color: #3498db; }
-                .status-select-mini.in_transit { background: #e8f5e9; color: #2ecc71; border-color: #2ecc71; }
-                .status-select-mini.delivered { background: #e8f5e9; color: #27ae60; border-color: #27ae60; }
-                .status-select-mini.returned { background: #fce4ec; color: #e74c3c; border-color: #e74c3c; }
-                .status-select-mini.cancelled { background: #ecf0f1; color: #95a5a6; border-color: #95a5a6; }
-                
-                /* Pagination */
+                .status-badge.pending { background: #fef3e2; color: #f39c12; }
+                .status-badge.assigned { background: #e3f2fd; color: #3498db; }
+                .status-badge.in_transit { background: #e8f5e9; color: #2ecc71; }
+                .status-badge.delivered { background: #e8f5e9; color: #27ae60; }
+                .status-badge.returned { background: #fce4ec; color: #e74c3c; }
+                .status-badge.cancelled { background: #ecf0f1; color: #95a5a6; }
                 .pagination-container-colis {
                     display: flex;
                     justify-content: center;
@@ -627,8 +888,6 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                     background: #FBF4F4;
                     transform: scale(1.05);
                 }
-                
-                /* Modal */
                 .assign-modal-overlay {
                     position: fixed;
                     top: 0;
@@ -646,7 +905,7 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                     background: white;
                     border-radius: 24px;
                     width: 90%;
-                    max-width: 500px;
+                    max-width: 550px;
                     animation: slideUp 0.3s ease;
                     box-shadow: 0 20px 40px rgba(0,0,0,0.2);
                 }
@@ -702,6 +961,22 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
                     font-size: 13px;
                     text-align: center;
                 }
+                .drivers-stats-row {
+                    display: flex;
+                    gap: 10px;
+                    justify-content: center;
+                    margin-top: 10px;
+                }
+                .stat-badge {
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    background: #f0f0f0;
+                }
+                .stat-badge.free { background: #e8f5e9; color: #2e7d32; }
+                .stat-badge.busy { background: #fff3e0; color: #e65100; }
+                .stat-badge.full { background: #ffebee; color: #c62828; }
                 .assign-modal-footer {
                     display: flex;
                     justify-content: flex-end;

@@ -59,7 +59,7 @@ spec:
 
             # Kafka Configuration
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
-              value: "kafka-service:9092"
+              value: "kafka:9092"
 
           readinessProbe:
             tcpSocket:

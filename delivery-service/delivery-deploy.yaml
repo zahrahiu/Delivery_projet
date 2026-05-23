@@ -46,7 +46,7 @@ spec:
             - name: DB_PORT
               value: "5432"
             - name: KAFKA_BROKER
-              value: "kafka-service:9092"
+              value: "kafka:9092"
             - name: ZIPKIN_URL
               value: "http://zipkin:9411/api/v2/spans"
             - name: OTEL_SERVICE_NAME

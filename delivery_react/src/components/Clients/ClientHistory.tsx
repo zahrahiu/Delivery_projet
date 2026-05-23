@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { FaBox, FaCheckCircle, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaPhone, FaWeightHanging, FaPrint, FaDownload, FaSearch, FaTimes, FaSignature, FaStore, FaTruck } from "react-icons/fa";
+import { FaBox, FaCheckCircle, FaMapMarkerAlt, FaCalendarAlt, FaUser, FaPhone, FaWeightHanging, FaPrint, FaDownload, FaSearch, FaTimes, FaSignature } from "react-icons/fa";
 import { HiOutlineDocumentReport } from "react-icons/hi";
 import logoSmall from "../../assets/img.png";
 import jsPDF from 'jspdf';
@@ -17,6 +17,27 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
     const [showDeliveryNoteModal, setShowDeliveryNoteModal] = useState(false);
     const deliveryNoteRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // ✅ إضافة متغيرات الأسعار الديناميكية
+    const [villesData, setVillesData] = useState<any[]>([]);
+    const [loadingPrices, setLoadingPrices] = useState(true);
+
+    const API_URL = "http://localhost:8888/tarif-zone-service/api/tarifs";
+
+    // ✅ جلب الأسعار من API عند تحميل المكون (نفس LivreurHistory)
+    useEffect(() => {
+        const fetchPrices = async () => {
+            try {
+                const res = await axios.get(API_URL);
+                setVillesData(res.data);
+            } catch (err) {
+                console.error("Erreur chargement des prix:", err);
+            } finally {
+                setLoadingPrices(false);
+            }
+        };
+        fetchPrices();
+    }, []);
 
     const deliveredParcels = parcels.filter(p => p.status === 'DELIVERED');
 
@@ -37,6 +58,35 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
             hour: '2-digit', minute: '2-digit'
         });
     };
+
+    // ✅ Récupérer le prix de livraison dynamique depuis l'API (نفس LivreurHistory)
+    const getDeliveryPrice = (parcel: any): number => {
+        if (loadingPrices) return 0;
+
+        const cityName = parcel.cityName || parcel.deliveryAddress?.split(',')[0]?.trim();
+
+        const ville = villesData.find(v =>
+            v.ville?.toLowerCase() === cityName?.toLowerCase() ||
+            cityName?.toLowerCase().includes(v.ville?.toLowerCase())
+        );
+
+        const price = ville?.frais_livraison;
+
+        if (typeof price === 'number') return price;
+        if (typeof price === 'string') return parseFloat(price) || 25;
+        return 25;
+    };
+
+    // ✅ حساب total encaissé (نفس LivreurHistory)
+    const calculateTotalEncaisse = () => {
+        if (loadingPrices) return 0;
+        return deliveredParcels.reduce((sum, p) => {
+            const price = getDeliveryPrice(p);
+            return sum + price;
+        }, 0);
+    };
+
+    const totalEncaisse = calculateTotalEncaisse();
 
     const filteredParcels = deliveredParcels.filter(p =>
         p.trackingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,13 +119,9 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
     // Téléchargement PDF de haute qualité
     const handleDownloadPDF = async () => {
         if (!deliveryNoteRef.current) return;
-
         setIsGenerating(true);
-
         try {
             const element = deliveryNoteRef.current;
-
-            // Configuration de haute qualité pour html2canvas (sans scale)
             const canvas = await html2canvas(element, {
                 backgroundColor: '#ffffff',
                 logging: false,
@@ -83,37 +129,27 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                 windowWidth: element.scrollWidth,
                 windowHeight: element.scrollHeight
             } as any);
-
             const imgData = canvas.toDataURL('image/png', 1.0);
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
                 format: 'a4'
             });
-
-            const pageWidth = 210; // A4 width mm
-            const pageHeight = 297; // A4 height mm
-
-            const imgWidth = pageWidth - 20; // margin
+            const pageWidth = 210;
+            const pageHeight = 297;
+            const imgWidth = pageWidth - 20;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
             let finalWidth = imgWidth;
             let finalHeight = imgHeight;
-
             if (imgHeight > pageHeight - 20) {
                 const ratio = (pageHeight - 20) / imgHeight;
                 finalWidth = imgWidth * ratio;
                 finalHeight = imgHeight * ratio;
             }
-
             const x = (pageWidth - finalWidth) / 2;
             const y = (pageHeight - finalHeight) / 2;
-
             pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-
             pdf.save(`Bon_Livraison_${selectedParcel?.trackingNumber}.pdf`);
-
-            console.log("✅ PDF téléchargé avec succès");
         } catch (error) {
             console.error("❌ Erreur lors de la génération du PDF:", error);
             alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
@@ -129,7 +165,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                 <div className="delivery-note-overlay" onClick={closeDeliveryNote}>
                     <div className="delivery-note-modal" onClick={(e) => e.stopPropagation()}>
                         <div ref={deliveryNoteRef} id="delivery-note-content" className="delivery-note-content">
-                            {/* En-tête avec design élégant */}
                             <div className="delivery-note-header">
                                 <div className="delivery-note-logo">
                                     <img src={logoSmall} alt="QribLik" style={{ height: '60px' }} />
@@ -140,7 +175,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                                 </div>
                             </div>
 
-                            {/* Informations client - Design élégant */}
                             <div className="delivery-note-section">
                                 <h3><FaUser /> Informations client</h3>
                                 <div className="delivery-note-grid">
@@ -159,7 +193,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                                 </div>
                             </div>
 
-                            {/* Informations colis */}
                             <div className="delivery-note-section">
                                 <h3><FaBox /> Informations colis</h3>
                                 <div className="delivery-note-grid">
@@ -171,6 +204,10 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                                         <label>Poids</label>
                                         <p><strong>{selectedParcel.weight} kg</strong></p>
                                     </div>
+                                    <div className="info-card">
+                                        <label>Prix de livraison</label>
+                                        <p><strong>{getDeliveryPrice(selectedParcel)} DH</strong></p>
+                                    </div>
                                     <div className="info-card full-width">
                                         <label>Adresse de livraison</label>
                                         <p><strong>{selectedParcel.deliveryAddress}</strong></p>
@@ -178,7 +215,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                                 </div>
                             </div>
 
-                            {/* Informations livraison */}
                             <div className="delivery-note-section">
                                 <h3><FaCalendarAlt /> Informations de livraison</h3>
                                 <div className="delivery-note-grid two-cols">
@@ -193,7 +229,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                                 </div>
                             </div>
 
-                            {/* Signature */}
                             <div className="delivery-note-section signature-section">
                                 <h3><FaSignature /> Signature du client</h3>
                                 <div className="signature-area">
@@ -211,7 +246,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                                 </p>
                             </div>
 
-                            {/* Mentions légales */}
                             <div className="delivery-note-footer">
                                 <div className="footer-logo">
                                     <img src={logoSmall} alt="QribLik" style={{ height: '35px' }} />
@@ -254,19 +288,28 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                 </div>
             </div>
 
-            {/* Stats */}
+            {/* Stats - ✅ Ajout du total encaissé comme LivreurHistory */}
             <div className="history-stats">
-                <div className="stat-card-history">
+                <div className="stat-card-history" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
                     <FaCheckCircle className="stat-icon-delivered" />
                     <div>
                         <span className="stat-value">{deliveredParcels.length}</span>
                         <span className="stat-label">Colis livrés</span>
                     </div>
                 </div>
+                <div className="stat-card-history" style={{ background: 'linear-gradient(135deg, #3b4e61, #4a5f75)' }}>
+                    <span className="stat-icon-delivered">💰</span>
+                    <div>
+                        <span className="stat-value">{loadingPrices ? "..." : `${totalEncaisse} DH`}</span>
+                        <span className="stat-label">Total encaissé</span>
+                    </div>
+                </div>
             </div>
 
-            {/* Liste */}
-            {filteredParcels.length === 0 ? (
+            {/* Liste - ✅ Affichage du prix dans chaque carte */}
+            {loadingPrices ? (
+                <div className="loading-state">Chargement des prix...</div>
+            ) : filteredParcels.length === 0 ? (
                 <div className="empty-history">
                     <div className="empty-icon">📭</div>
                     <h3>Aucune livraison trouvée</h3>
@@ -289,6 +332,7 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                                     <span><FaCalendarAlt /> {formatDate(parcel.deliveredAt)}</span>
                                     <span><FaUser /> {parcel.senderName || "Client"}</span>
                                     <span><FaWeightHanging /> {parcel.weight} kg</span>
+                                    <span><span style={{ color: '#e67e22', fontWeight: 'bold' }}>{getDeliveryPrice(parcel)} DH</span></span>
                                 </div>
                             </div>
                             <div className="history-item-action">
@@ -310,8 +354,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     min-height: 100vh;
                     padding: 25px;
                 }
-
-                /* Header */
                 .history-header {
                     background: white;
                     border-radius: 24px;
@@ -363,13 +405,13 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     outline: none;
                     font-size: 14px;
                 }
-
-                /* Stats */
                 .history-stats {
+                    display: flex;
+                    gap: 20px;
                     margin-bottom: 25px;
+                    flex-wrap: wrap;
                 }
                 .stat-card-history {
-                    background: linear-gradient(135deg, #10b981, #059669);
                     border-radius: 20px;
                     padding: 20px 25px;
                     color: white;
@@ -389,8 +431,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     font-size: 13px;
                     opacity: 0.9;
                 }
-
-                /* Liste */
                 .history-list {
                     display: flex;
                     flex-direction: column;
@@ -451,6 +491,7 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     gap: 20px;
                     font-size: 12px;
                     color: #A5AEAD;
+                    flex-wrap: wrap;
                 }
                 .history-meta span {
                     display: flex;
@@ -475,8 +516,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     transform: scale(1.02);
                     filter: brightness(1.05);
                 }
-
-                /* Empty */
                 .empty-history {
                     text-align: center;
                     padding: 60px 20px;
@@ -495,8 +534,13 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     margin: 0;
                     color: #A5AEAD;
                 }
-
-                /* Modal Bon de Livraison - Design élégant */
+                .loading-state {
+                    text-align: center;
+                    padding: 60px;
+                    background: white;
+                    border-radius: 24px;
+                    color: #999;
+                }
                 .delivery-note-overlay {
                     position: fixed;
                     top: 0;
@@ -676,7 +720,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     opacity: 0.6;
                     cursor: not-allowed;
                 }
-
                 @media (max-width: 768px) {
                     .history-item {
                         flex-direction: column;
@@ -694,6 +737,9 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ parcels, onBack }) => {
                     }
                     .delivery-note-content {
                         padding: 25px;
+                    }
+                    .history-stats {
+                        flex-direction: column;
                     }
                 }
             `}</style>

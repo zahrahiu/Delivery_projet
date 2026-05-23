@@ -4,7 +4,8 @@ import Swal from 'sweetalert2';
 import {
     FaPhone, FaMapMarkerAlt, FaMotorcycle, FaSearch,
     FaBox, FaExternalLinkAlt, FaCircle, FaTimes, FaTruckLoading,
-    FaChevronDown, FaChevronUp, FaEye, FaTruck, FaUser, FaCalendarAlt
+    FaChevronDown, FaChevronUp, FaEye, FaTruck, FaUser, FaCalendarAlt,
+    FaUserSecret, FaGlobe
 } from "react-icons/fa";
 import "./LivreurList.css";
 
@@ -14,11 +15,87 @@ const LivreurList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(true);
     const [expandedLivreur, setExpandedLivreur] = useState<number | null>(null);
+    const [filterMode, setFilterMode] = useState<"all" | "myZone">("all");
+    const [dispatcherZoneName, setDispatcherZoneName] = useState<string>("");
+    const [zoneCities, setZoneCities] = useState<string[]>([]);
 
     const GATEWAY_URL = "http://localhost:8888";
     const USERS_API = `${GATEWAY_URL}/users-service/api/profiles`;
     const PARCELS_API = `${GATEWAY_URL}/parcel-service/api/parcels`;
+    const ZONES_API = `${GATEWAY_URL}/tarif-zone-service/api/zones`;
     const IMAGE_BASE_URL = `${GATEWAY_URL}/users-service/uploads`;
+
+    const getUserIdFromToken = (): number | null => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return null;
+            const base64Url = token.split(".")[1];
+            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+            const payload = JSON.parse(window.atob(base64));
+            return payload.userId || payload.id || null;
+        } catch (err) {
+            console.error("Error decoding token:", err);
+            return null;
+        }
+    };
+
+    // 🔥 جيب Zone ديال الـ Dispatcher وجيب جميع المدن ديال هاد الـ Zone
+    const fetchDispatcherZoneAndCities = async () => {
+        try {
+            const userId = getUserIdFromToken();
+            if (!userId) {
+                console.warn("⚠️ No userId found in token");
+                setDispatcherZoneName("");
+                setZoneCities([]);
+                return;
+            }
+
+            console.log("🔍 Fetching dispatcher info for userId:", userId);
+            const token = localStorage.getItem("token");
+            const headers = { headers: { Authorization: `Bearer ${token}` } };
+
+            // 1. جيب معلومات الـ Dispatcher (فيه ville)
+            const userRes = await axios.get(`${GATEWAY_URL}/users-service/api/profiles/details/${userId}`, headers);
+            const userData = userRes.data;
+            const dispatcherCity = userData.zone || "";
+
+            console.log("📋 Dispatcher city:", dispatcherCity);
+
+            if (!dispatcherCity) {
+                setDispatcherZoneName("");
+                setZoneCities([]);
+                return;
+            }
+
+            // 2. جيب جميع الـ Zones من tarif-zone-service
+            const zonesRes = await axios.get(ZONES_API, headers);
+            const zones = zonesRes.data;
+            console.log("📋 All zones:", zones);
+
+            // 3. 🔥 لقى الـ Zone لي فيها dispatcherCity فـ villes_list
+            const foundZone = zones.find((z: any) => {
+                if (!z.villes_list || z.villes_list.length === 0) return false;
+                return z.villes_list.some((ville: string) =>
+                    ville.toLowerCase() === dispatcherCity.toLowerCase()
+                );
+            });
+
+            if (foundZone && foundZone.villes_list) {
+                setZoneCities(foundZone.villes_list);
+                setDispatcherZoneName(foundZone.nom_zone);
+                console.log("📍 Zone found:", foundZone.nom_zone);
+                console.log("📍 Cities in this zone:", foundZone.villes_list);
+            } else {
+                console.warn("⚠️ No zone found containing city:", dispatcherCity);
+                setZoneCities([]);
+                setDispatcherZoneName("");
+            }
+        } catch (err) {
+            console.error("❌ Error fetching dispatcher zone info:", err);
+            setDispatcherZoneName("");
+            setZoneCities([]);
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -40,9 +117,11 @@ const LivreurList: React.FC = () => {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchDispatcherZoneAndCities();
+        fetchData();
+    }, []);
 
-    // 🔥 Récupérer les colis assignés à un livreur spécifique
     const getLivreurParcels = (livreurId: number) => {
         return parcels.filter(p =>
             String(p.assignedLivreurId || p.livreurId || p.assignedLivreur?.userId) === String(livreurId)
@@ -53,7 +132,6 @@ const LivreurList: React.FC = () => {
         return getLivreurParcels(livreurId).length;
     };
 
-    // 🔥 Formater la date
     const formatDate = (date: string) => {
         if (!date) return "Date non spécifiée";
         return new Date(date).toLocaleDateString('fr-FR', {
@@ -79,11 +157,25 @@ const LivreurList: React.FC = () => {
         setExpandedLivreur(expandedLivreur === livreurId ? null : livreurId);
     };
 
-    // Filtrer les livreurs
+    // 🔥 التحقق إذا كان الـ Livreur فـ نفس Zone
+    const isLivreurInDispatcherZone = (livreur: any): boolean => {
+        if (zoneCities.length === 0) return false;
+        const livreurCity = (livreur.zone || livreur.city || "").toLowerCase();
+        return zoneCities.some(city => city.toLowerCase() === livreurCity);
+    };
+
     const filteredLivreurs = livreurs.filter(l => {
         const name = `${l.firstName} ${l.lastName}`.toLowerCase();
-        const city = (l.city || l.address || l.ville || "").toLowerCase();
-        return name.includes(searchTerm.toLowerCase()) || city.includes(searchTerm.toLowerCase());
+        const city = (l.zone || l.city || l.address || "").toLowerCase();
+        const matchesSearch = name.includes(searchTerm.toLowerCase()) || city.includes(searchTerm.toLowerCase());
+
+        if (!matchesSearch) return false;
+
+        if (filterMode === "myZone" && zoneCities.length > 0) {
+            return isLivreurInDispatcherZone(l);
+        }
+
+        return true;
     });
 
     if (loading) return <div className="loading-state">Chargement de la flotte...</div>;
@@ -93,8 +185,9 @@ const LivreurList: React.FC = () => {
             <div className="list-header-v4">
                 <div className="header-title">
                     <h2>📋 Flotte de Livraison - QribLik</h2>
-                    <span>{filteredLivreurs.length} livreurs connectés</span>
+                    <span>{filteredLivreurs.length} livreurs {filterMode === "myZone" ? `dans votre zone (${dispatcherZoneName || "Non définie"})` : "connectés"}</span>
                 </div>
+
                 <div className="search-wrapper-v4">
                     <FaSearch />
                     <input
@@ -105,15 +198,35 @@ const LivreurList: React.FC = () => {
                 </div>
             </div>
 
+            <div className="filter-buttons-v4">
+                <button
+                    className={`filter-btn ${filterMode === "all" ? "active" : ""}`}
+                    onClick={() => setFilterMode("all")}
+                >
+                    <FaGlobe /> Tous les livreurs
+                </button>
+                <button
+                    className={`filter-btn ${filterMode === "myZone" ? "active" : ""}`}
+                    onClick={() => setFilterMode("myZone")}
+                    disabled={zoneCities.length === 0}
+                    style={{
+                        opacity: zoneCities.length === 0 ? 0.5 : 1,
+                        cursor: zoneCities.length === 0 ? "not-allowed" : "pointer"
+                    }}
+                >
+                    <FaUserSecret /> 📍 Ma zone ({dispatcherZoneName || "Non définie"})
+                </button>
+            </div>
+
             <div className="livreurs-cards-container">
                 {filteredLivreurs.map((livreur) => {
                     const count = getParcelCount(livreur.userId);
                     const livreurParcels = getLivreurParcels(livreur.userId);
                     const isExpanded = expandedLivreur === livreur.userId;
+                    const inMyZone = isLivreurInDispatcherZone(livreur);
 
                     return (
                         <div key={livreur.userId} className="livreur-card-modern">
-                            {/* Header de la carte livreur */}
                             <div className="livreur-card-header" onClick={() => toggleExpand(livreur.userId)}>
                                 <div className="livreur-avatar">
                                     {livreur.profileImageUrl ? (
@@ -129,10 +242,13 @@ const LivreurList: React.FC = () => {
                                     <div className="livreur-name">
                                         {livreur.firstName} {livreur.lastName}
                                         <span className={`status-dot ${count > 0 ? 'busy' : 'free'}`}></span>
+                                        {filterMode === "all" && inMyZone && dispatcherZoneName && (
+                                            <span className="same-zone-badge">📍 Ma zone</span>
+                                        )}
                                     </div>
                                     <div className="livreur-details">
                                         <span><FaPhone /> {livreur.phone || "Non renseigné"}</span>
-                                        <span><FaMapMarkerAlt /> {livreur.zone || livreur.city || livreur.address || "Zone non définie"}</span>
+                                        <span><FaMapMarkerAlt /> {livreur.zone || livreur.city || livreur.address || "Ville non définie"}</span>
                                         <span><FaMotorcycle /> {livreur.vehicleType || "Véhicule non spécifié"}</span>
                                     </div>
                                 </div>
@@ -147,7 +263,6 @@ const LivreurList: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Liste des colis assignés (expandable) */}
                             {isExpanded && (
                                 <div className="livreur-parcels-section">
                                     <div className="parcels-header">
@@ -226,7 +341,11 @@ const LivreurList: React.FC = () => {
                 <div className="empty-state-v4">
                     <FaBox className="empty-icon" />
                     <h3>Aucun livreur trouvé</h3>
-                    <p>Essayez de modifier votre recherche</p>
+                    <p>
+                        {filterMode === "myZone"
+                            ? `Aucun livreur dans votre zone (${dispatcherZoneName || "Non définie"})`
+                            : "Essayez de modifier votre recherche"}
+                    </p>
                 </div>
             )}
 
@@ -241,7 +360,7 @@ const LivreurList: React.FC = () => {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 30px;
+                    margin-bottom: 20px;
                     flex-wrap: wrap;
                     gap: 20px;
                 }
@@ -278,7 +397,54 @@ const LivreurList: React.FC = () => {
                     width: 250px;
                 }
 
-                /* Cartes livreur */
+                .filter-buttons-v4 {
+                    display: flex;
+                    gap: 15px;
+                    margin-bottom: 25px;
+                    flex-wrap: wrap;
+                }
+
+                .filter-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 20px;
+                    border-radius: 40px;
+                    border: none;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    background: white;
+                    color: #4D5C71;
+                    border: 1px solid #E8E0E0;
+                }
+
+                .filter-btn.active {
+                    background: linear-gradient(135deg, #4D5C71, #3b4e61);
+                    color: white;
+                    border-color: transparent;
+                }
+
+                .filter-btn:hover:not(:disabled) {
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                }
+
+                .filter-btn:disabled {
+                    cursor: not-allowed;
+                }
+
+                .same-zone-badge {
+                    background: #2ecc71;
+                    color: white;
+                    padding: 2px 10px;
+                    border-radius: 20px;
+                    font-size: 10px;
+                    font-weight: 600;
+                    margin-left: 10px;
+                }
+
                 .livreurs-cards-container {
                     display: flex;
                     flex-direction: column;
@@ -347,6 +513,7 @@ const LivreurList: React.FC = () => {
                     align-items: center;
                     gap: 10px;
                     margin-bottom: 8px;
+                    flex-wrap: wrap;
                 }
 
                 .status-dot {
@@ -403,7 +570,6 @@ const LivreurList: React.FC = () => {
                     font-size: 18px;
                 }
 
-                /* Section des colis */
                 .livreur-parcels-section {
                     border-top: 1px solid #E8E0E0;
                     padding: 20px 25px;
@@ -513,7 +679,6 @@ const LivreurList: React.FC = () => {
                     line-height: 1.4;
                 }
 
-                /* Empty state */
                 .empty-state-v4 {
                     text-align: center;
                     padding: 60px 20px;
@@ -554,6 +719,10 @@ const LivreurList: React.FC = () => {
                     .detail-row.two-cols {
                         flex-direction: column;
                         gap: 10px;
+                    }
+                    
+                    .filter-buttons-v4 {
+                        justify-content: center;
                     }
                 }
             `}</style>

@@ -8,6 +8,7 @@ import {
     FaMapMarkerAlt, FaCity, FaCar, FaSearch, FaSpinner
 } from 'react-icons/fa';
 import Swal from 'sweetalert2';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Notification {
     _id: string;
@@ -29,7 +30,7 @@ interface UserComplete {
     firstName: string;
     lastName: string;
     email: string;
-    phone: string;           // ✅ phone ماشي phoneNumber
+    phone: string;
     cni: string;
     zone: string;
     address: string;
@@ -40,7 +41,9 @@ interface UserComplete {
     active: boolean;
 }
 
-const PendingUsers = () => {
+const PendingUsers: React.FC = () => {
+    const { darkMode, toggleTheme } = useTheme(); // ✅ جيب darkMode من Context
+
     const [pendingUsers, setPendingUsers] = useState<Notification[]>([]);
     const [usersDetails, setUsersDetails] = useState<Map<number, UserComplete>>(new Map());
     const [loading, setLoading] = useState(true);
@@ -49,14 +52,13 @@ const PendingUsers = () => {
     const [activeTab, setActiveTab] = useState("pending");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // ✅ URLs - نقط على Gateway
+    // ✅ URLs
     const API_BASE = "http://localhost:8888";
     const USERS_API = `${API_BASE}/users-service/api/profiles`;
     const SECURITY_API = `${API_BASE}/service-security/v1/users`;
     const NOTIF_API = `${API_BASE}/notification-service/api/notifications`;
 
     // ✅ جلب الطلبات المعلقة
-    // فـ PendingUsers.tsx، غير هذا:
     const fetchPendingUsers = async () => {
         try {
             setLoading(true);
@@ -70,16 +72,13 @@ const PendingUsers = () => {
 
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            // 🔥 غير من pending-signups إلى admin-alerts
             const res = await axios.get<Notification[]>(`${NOTIF_API}/admin-alerts`, config);
 
             console.log("🔔 Notifications reçues:", res.data);
 
-            // تصفية فقط نوع NEW_SIGNUP_REQUEST
             const signups = res.data.filter(n => n.type === 'NEW_SIGNUP_REQUEST' && n.status === 'PENDING');
             setPendingUsers(signups);
 
-            // جلب تفاصيل كل مستخدم
             for (const user of signups) {
                 if (user.userId) {
                     await fetchUserDetails(user.userId);
@@ -148,14 +147,12 @@ const PendingUsers = () => {
             const config = { headers: { Authorization: `Bearer ${token}` } };
             const firstName = fullName.split(' ')[0];
 
-            // 1. ✅ Activer dans Security Service
             await axios.patch(
                 `${SECURITY_API}/${notification.userId}/status`,
                 { active: true },
                 { ...config, headers: { ...config.headers, 'Content-Type': 'application/json' } }
             );
 
-            // 2. ✅ Envoyer email (optionnel)
             try {
                 await axios.post(
                     `${NOTIF_API}/send-manual`,
@@ -170,12 +167,10 @@ const PendingUsers = () => {
                 console.warn("Email non envoyé:", emailErr);
             }
 
-            // 3. ✅ Supprimer la notification
             await axios.delete(`${NOTIF_API}/${notification._id}`, config);
 
             showToast('success', '✅ Succès', `Compte de ${firstName} activé!`);
 
-            // 4. ✅ Rafraîchir la liste
             await fetchPendingUsers();
         } catch (err: any) {
             console.error("❌ Error accepting user:", err);
@@ -200,15 +195,11 @@ const PendingUsers = () => {
             const token = localStorage.getItem("token");
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            // 1. ✅ Supprimer de Security Service
             await axios.delete(`${SECURITY_API}/${notification.userId}`, config);
-
-            // 2. ✅ Supprimer la notification
             await axios.delete(`${NOTIF_API}/${notification._id}`, config);
 
             showToast('success', '✅ Rejeté', `Demande de ${fullName} rejetée.`);
 
-            // 3. ✅ Rafraîchir la liste
             await fetchPendingUsers();
         } catch (err: any) {
             console.error("❌ Error rejecting user:", err);
@@ -224,7 +215,6 @@ const PendingUsers = () => {
         if (details) return `${details.firstName} ${details.lastName}`;
         if (notif.firstName && notif.lastName) return `${notif.firstName} ${notif.lastName}`;
 
-        // Extraction from content
         if (notif.content && notif.content.includes("souhaite s'inscrire")) {
             const name = notif.content.split("souhaite")[0].trim();
             if (name) return name;
@@ -249,12 +239,10 @@ const PendingUsers = () => {
     const clients = filteredUsers.filter(u => u.role === 'CLIENT');
     const livreurs = filteredUsers.filter(u => u.role === 'LIVREUR');
 
-    // ✅ Chargement initial
     useEffect(() => {
         fetchPendingUsers();
     }, []);
 
-    // ✅ Refresh toutes les 15 secondes
     useEffect(() => {
         const interval = setInterval(fetchPendingUsers, 15000);
         return () => clearInterval(interval);
@@ -262,55 +250,63 @@ const PendingUsers = () => {
 
     if (loading && pendingUsers.length === 0) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: darkMode ? '#0f0f1a' : '#f5f7fb' }}>
                 <div style={{ textAlign: 'center' }}>
                     <FaSpinner size={40} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 20px', color: '#6c63ff' }} />
-                    <p>Chargement des demandes...</p>
+                    <p style={{ color: darkMode ? '#eaeef2' : '#333' }}>Chargement des demandes...</p>
                 </div>
             </div>
         );
     }
 
-    // ✅ Composant tableau
+    // ✅ Composant tableau avec Dark Mode support
     const UserTable = ({ users, title, icon, color, isLivreur = false }: {
         users: Notification[], title: string, icon: React.ReactNode, color: string, isLivreur?: boolean
     }) => (
         <div className="user-table-card" style={{
-            background: 'white', borderRadius: '20px', boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
-            marginBottom: '30px', overflow: 'hidden', border: `1px solid ${color}20`
+            background: darkMode ? '#16213e' : 'white',
+            borderRadius: '20px',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+            marginBottom: '30px',
+            overflow: 'hidden',
+            border: `1px solid ${color}20`
         }}>
             <div style={{
-                padding: '18px 24px', background: `linear-gradient(135deg, ${color}15, white)`,
-                borderBottom: `3px solid ${color}`, display: 'flex', alignItems: 'center', gap: '12px'
+                padding: '18px 24px',
+                background: darkMode ? `${color}20` : `linear-gradient(135deg, ${color}15, white)`,
+                borderBottom: `3px solid ${color}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
             }}>
                 <div style={{ background: color, width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                     {icon}
                 </div>
                 <div>
-                    <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold' }}>{title}</h3>
-                    <p style={{ margin: '5px 0 0', color: '#666', fontSize: '0.85rem' }}>{users.length} demande(s) en attente</p>
+                    <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 'bold', color: darkMode ? '#eaeef2' : '#333' }}>{title}</h3>
+                    <p style={{ margin: '5px 0 0', color: darkMode ? '#8b92a5' : '#666', fontSize: '0.85rem' }}>{users.length} demande(s) en attente</p>
                 </div>
             </div>
 
             {users.length === 0 ? (
-                <div style={{ padding: '60px', textAlign: 'center', color: '#999' }}>🎉 Aucune demande en attente</div>
+                <div style={{ padding: '60px', textAlign: 'center', color: darkMode ? '#8b92a5' : '#999' }}>🎉 Aucune demande en attente</div>
             ) : (
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
                         <thead>
-                        <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e0e0e0' }}>
-                            <th style={{ padding: '15px', textAlign: 'left' }}><FaUser /> Nom complet</th>
-                            <th style={{ padding: '15px', textAlign: 'left' }}>📧 Contact</th>
-                            <th style={{ padding: '15px', textAlign: 'left' }}><FaIdCard /> CNI</th>
-                            <th style={{ padding: '15px', textAlign: 'left' }}>📍 Localisation</th>
+                        <tr style={{ background: darkMode ? '#1a1a2e' : '#f8f9fa', borderBottom: `2px solid ${darkMode ? '#2d2d44' : '#e0e0e0'}` }}>
+                            <th style={{ padding: '15px', textAlign: 'left', color: darkMode ? '#8b92a5' : '#555' }}><FaUser /> Nom complet</th>
+                            <th style={{ padding: '15px', textAlign: 'left', color: darkMode ? '#8b92a5' : '#555' }}>📧 Contact</th>
+                            <th style={{ padding: '15px', textAlign: 'left', color: darkMode ? '#8b92a5' : '#555' }}><FaIdCard /> CNI</th>
+                            <th style={{ padding: '15px', textAlign: 'left', color: darkMode ? '#8b92a5' : '#555' }}>📍 Localisation</th>
                             {isLivreur && (
                                 <>
-                                    <th style={{ padding: '15px', textAlign: 'left' }}><FaCar /> Véhicule</th>
-                                    <th style={{ padding: '15px', textAlign: 'left' }}>📄 Documents</th>
+                                    <th style={{ padding: '15px', textAlign: 'left', color: darkMode ? '#8b92a5' : '#555' }}><FaCar /> Véhicule</th>
+                                    <th style={{ padding: '15px', textAlign: 'left', color: darkMode ? '#8b92a5' : '#555' }}>📄 Documents</th>
                                 </>
                             )}
-                            <th style={{ padding: '15px', textAlign: 'left' }}><FaCalendarAlt /> Date</th>
-                            <th style={{ padding: '15px', textAlign: 'center' }}>Actions</th>
+                            <th style={{ padding: '15px', textAlign: 'left', color: darkMode ? '#8b92a5' : '#555' }}><FaCalendarAlt /> Date</th>
+                            <th style={{ padding: '15px', textAlign: 'center', color: darkMode ? '#8b92a5' : '#555' }}>Actions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -318,31 +314,31 @@ const PendingUsers = () => {
                             const details = usersDetails.get(notif.userId);
                             const isLoading = processingId === notif._id;
                             return (
-                                <tr key={notif._id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                    <td style={{ padding: '15px' }}>
+                                <tr key={notif._id} style={{ borderBottom: `1px solid ${darkMode ? '#2d2d44' : '#f0f0f0'}` }}>
+                                    <td style={{ padding: '15px', color: darkMode ? '#eaeef2' : '#333' }}>
                                         <strong>{getFullName(notif)}</strong>
                                         <br />
-                                        <small style={{ color: '#999', fontSize: '11px' }}>ID: #{notif.userId}</small>
+                                        <small style={{ color: darkMode ? '#6b7280' : '#999', fontSize: '11px' }}>ID: #{notif.userId}</small>
                                     </td>
-                                    <td style={{ padding: '15px' }}>
-                                        <div><FaEnvelope style={{ marginRight: '8px', color: '#666' }} /> {notif.recipient}</div>
-                                        <div><FaPhone style={{ marginRight: '8px', color: '#666' }} /> {details?.phone || 'Non renseigné'}</div>
+                                    <td style={{ padding: '15px', color: darkMode ? '#cbd5e1' : '#333' }}>
+                                        <div><FaEnvelope style={{ marginRight: '8px', color: darkMode ? '#8b92a5' : '#666' }} /> {notif.recipient}</div>
+                                        <div><FaPhone style={{ marginRight: '8px', color: darkMode ? '#8b92a5' : '#666' }} /> {details?.phone || 'Non renseigné'}</div>
                                     </td>
-                                    <td style={{ padding: '15px' }}>{details?.cni || 'Non renseigné'}</td>
-                                    <td style={{ padding: '15px' }}>
-                                        <div><FaCity style={{ marginRight: '8px', color: '#666' }} /> {details?.zone || 'Non renseignée'}</div>
-                                        <div><FaMapMarkerAlt style={{ marginRight: '8px', color: '#666' }} /> {details?.address || 'Non renseignée'}</div>
+                                    <td style={{ padding: '15px', color: darkMode ? '#cbd5e1' : '#333' }}>{details?.cni || 'Non renseigné'}</td>
+                                    <td style={{ padding: '15px', color: darkMode ? '#cbd5e1' : '#333' }}>
+                                        <div><FaCity style={{ marginRight: '8px', color: darkMode ? '#8b92a5' : '#666' }} /> {details?.zone || 'Non renseignée'}</div>
+                                        <div><FaMapMarkerAlt style={{ marginRight: '8px', color: darkMode ? '#8b92a5' : '#666' }} /> {details?.address || 'Non renseignée'}</div>
                                     </td>
                                     {isLivreur && (
                                         <>
-                                            <td style={{ padding: '15px' }}>{details?.vehicleType || 'Non renseigné'}</td>
-                                            <td style={{ padding: '15px' }}>
+                                            <td style={{ padding: '15px', color: darkMode ? '#cbd5e1' : '#333' }}>{details?.vehicleType || 'Non renseigné'}</td>
+                                            <td style={{ padding: '15px', color: darkMode ? '#cbd5e1' : '#333' }}>
                                                 <div><strong>Matricule:</strong> {details?.matricule || 'N/A'}</div>
                                                 <div><strong>Permis:</strong> {details?.permisNumber || 'N/A'}</div>
                                             </td>
                                         </>
                                     )}
-                                    <td style={{ padding: '15px' }}>{formatDate(notif.createdAt)}</td>
+                                    <td style={{ padding: '15px', color: darkMode ? '#cbd5e1' : '#333' }}>{formatDate(notif.createdAt)}</td>
                                     <td style={{ padding: '15px', textAlign: 'center' }}>
                                         <button
                                             onClick={() => acceptUser(notif)}
@@ -390,12 +386,19 @@ const PendingUsers = () => {
     );
 
     return (
-        <div className="admin-container" style={{ display: 'flex', minHeight: '100vh', background: '#f5f7fb' }}>
+        <div className="admin-container" style={{ display: 'flex', minHeight: '100vh', background: darkMode ? '#0f0f1a' : '#f5f7fb' }}>
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role="ADMIN" />
             <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <TopHeader activeTab="pending" isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} user={{ firstName: 'Admin', lastName: '' }} />
+                <TopHeader
+                    activeTab="pending"
+                    isMenuOpen={isMenuOpen}
+                    setIsMenuOpen={setIsMenuOpen}
+                    darkMode={darkMode}
+                    toggleTheme={toggleTheme}
+                    user={{ firstName: 'Admin', lastName: '' }}
+                />
                 <section style={{ padding: '30px' }}>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '20px' }}>📋 Gestion des inscriptions</h1>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '20px', color: darkMode ? '#eaeef2' : '#333' }}>📋 Gestion des inscriptions</h1>
 
                     <div style={{ marginBottom: '25px', maxWidth: '400px' }}>
                         <div style={{ position: 'relative' }}>
@@ -408,9 +411,11 @@ const PendingUsers = () => {
                                 style={{
                                     width: '100%',
                                     padding: '12px 15px 12px 45px',
-                                    border: '1px solid #e0e0e0',
+                                    border: `1px solid ${darkMode ? '#3d3d5c' : '#e0e0e0'}`,
                                     borderRadius: '12px',
-                                    fontSize: '14px'
+                                    fontSize: '14px',
+                                    background: darkMode ? '#1a1a2e' : 'white',
+                                    color: darkMode ? '#eaeef2' : '#333'
                                 }}
                             />
                         </div>

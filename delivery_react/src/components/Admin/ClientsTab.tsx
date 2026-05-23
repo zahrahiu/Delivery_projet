@@ -8,6 +8,7 @@ import {
 import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
 import Swal from 'sweetalert2';
+import { useTheme } from "../../context/ThemeContext";
 
 interface Client {
     userId: number;
@@ -25,7 +26,7 @@ interface Props {
     onClientsUpdate?: (count: number) => void;
 }
 
-// 🔥 دالة لتوليد كلمة مرور عشوائية
+// دالة لتوليد كلمة مرور عشوائية
 const generateRandomPassword = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
     let password = '';
@@ -36,8 +37,10 @@ const generateRandomPassword = () => {
 };
 
 const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
+    const { darkMode, toggleTheme } = useTheme(); // ✅ جيب darkMode من Context
+
     const [clients, setClients] = useState<Client[]>([]);
-    const [villes, setVilles] = useState<Ville[]>([]);  // 🔥 أضفنا المدن
+    const [villes, setVilles] = useState<Ville[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -71,12 +74,14 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
         }
     });
 
-    // 🔥 جلب المدن من Database
+    // جلب المدن من Database
     const fetchVilles = async () => {
-
+        try {
             const response = await axios.get(TARIFS_API);
             setVilles(response.data);
-
+        } catch (error) {
+            console.error("Error fetching villes:", error);
+        }
     };
 
     const fetchClients = async () => {
@@ -85,7 +90,7 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
 
             const filtered = response.data.filter((u: any) =>
                 u.role === "CLIENT" &&
-                u.active === true  // 🔥 هذا هو الفلتر المهم!
+                u.active === true
             );
 
             setClients(filtered);
@@ -98,7 +103,7 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
 
     useEffect(() => {
         fetchClients();
-        fetchVilles();  // 🔥 جلب المدن عند تحميل الصفحة
+        fetchVilles();
     }, []);
 
     const showToast = (icon: 'success' | 'error' | 'warning', title: string, text?: string) => {
@@ -168,7 +173,7 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
         setGeneratedPassword("");
     };
 
-    // 🔥 دالة لإرسال الإيميل مع password
+    // دالة لإرسال الإيميل مع password
     const sendWelcomeEmail = async (email: string, firstName: string, password: string) => {
         try {
             const token = localStorage.getItem("token");
@@ -203,7 +208,6 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
                 await axios.put(`${API_URL}/${formData.userId}`, finalPayload, getAuthConfigWithContentType());
                 showToast('success', 'Succès', "Client modifié ✅");
             } else {
-                // 🔥 توليد كلمة مرور عشوائية للـ Client
                 const randomPassword = generateRandomPassword();
                 setGeneratedPassword(randomPassword);
 
@@ -216,9 +220,8 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
                     firstLogin: true
                 };
 
-                const response = await axios.post(API_URL, finalPayload, getAuthConfigWithContentType());
+                await axios.post(API_URL, finalPayload, getAuthConfigWithContentType());
 
-                // 🔥 إرسال الإيميل مع password
                 await sendWelcomeEmail(finalPayload.email, finalPayload.firstName, randomPassword);
 
                 showToast('success', 'Succès', `Client créé ✅\nEmail envoyé à ${finalPayload.email}`);
@@ -258,13 +261,15 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
     };
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f5f7fb' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', background: darkMode ? '#0f0f1a' : '#f5f7fb' }}>
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role="ADMIN" />
             <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <TopHeader
                     activeTab={activeTab}
                     isMenuOpen={isMenuOpen}
                     setIsMenuOpen={setIsMenuOpen}
+                    darkMode={darkMode}
+                    toggleTheme={toggleTheme}
                     user={{ firstName: 'Admin', lastName: '' }}
                 />
                 <div style={{ padding: '30px' }}>
@@ -293,7 +298,8 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
                                                 border: '1px solid #e0e0e0',
                                                 borderRadius: '12px',
                                                 fontSize: '14px',
-                                                background: 'white'
+                                                background: darkMode ? '#1a1a2e' : 'white',
+                                                color: darkMode ? '#eaeef2' : '#333'
                                             }}
                                         />
                                     </div>
@@ -410,7 +416,6 @@ const ClientsTab: React.FC<Props> = ({ onClientsUpdate }) => {
                                             </select>
                                         </div>
 
-                                        {/* 🔥 حقل password محذوف للـ Client (Admin لا يدخل password) */}
                                         {!isEditing && (
                                             <div className="info-message" style={{ background: '#e3f2fd', padding: '10px', borderRadius: '8px', marginTop: '10px' }}>
                                                 <small>🔐 Un mot de passe temporaire sera généré automatiquement et envoyé par email.</small>
