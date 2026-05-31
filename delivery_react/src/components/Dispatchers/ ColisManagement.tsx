@@ -318,30 +318,28 @@ const ColisManagement: React.FC<ColisProps> = ({ onAddClick, onEditClick }) => {
 
         setIsAssigning(true);
         try {
-            await axios.patch(
-                `${PARCEL_API}/${selectedParcelForAssign.id}/assign/${selectedDriver}`,
-                {},
-                getHeaders()
-            );
+            // 🔥 استعمل Delivery Service (وخلّي Parcel Service يتزامن عبر Kafka)
+            const DELIVERY_API = "http://localhost:8888/delivery-service/api/deliveries";
 
-            await axios.patch(
-                `${PARCEL_API}/${selectedParcelForAssign.id}/status?status=ASSIGNED`,
-                {},
-                getHeaders()
-            );
+            await axios.post(`${DELIVERY_API}/${selectedParcelForAssign.trackingNumber}/assign`, {
+                livreurId: selectedDriver
+            }, getHeaders());
 
+            // انتظر شوية باش Kafka يشتغل
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // جلب البيانات مرة أخرى
             await fetchParcels();
 
             Swal.fire({
                 icon: 'success',
                 title: '✅ Colis Assigné !',
-                text: `Le colis ${selectedParcelForAssign.trackingNumber} est maintenant assigné.\nStatut: ASSIGNED`,
+                text: `Le colis ${selectedParcelForAssign.trackingNumber} est maintenant assigné.`,
                 timer: 2000,
                 showConfirmButton: false
             });
 
             setShowAssignModal(false);
-
         } catch (err) {
             console.error("Erreur assignation:", err);
             Swal.fire('Erreur', 'Impossible d\'assigner le colis', 'error');

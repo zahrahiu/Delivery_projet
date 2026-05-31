@@ -13,7 +13,9 @@ public interface ParcelService {
     ParcelResponseDTO createParcel(ParcelRequestDTO parcelRequestDTO);
     ParcelResponseDTO getParcelByTrackingNumber(String trackingNumber);
     List<ParcelResponseDTO> getParcels(Principal principal);
-    void assignToLivreur(Long id, String livreurId); // هادي اللي ناقصة
+    void assignToLivreur(Long id, String livreurId);
+    void unassignLivreur(Long id);
+    // هادي اللي ناقصة
     void deleteParcel(Long id);
     ParcelResponseDTO updateParcel(Long id, ParcelRequestDTO parcelRequestDTO);
     void updateStatus(Long id, ParcelStatus status);
@@ -24,4 +26,5 @@ public interface ParcelService {
      void reportProblem(Long id, String reason);
     void updateClientParcelInfo(Long id, ClientUpdateRequest request);
     void cancelParcelByClient(Long id);
+    void restartParcel(Long id);
 }

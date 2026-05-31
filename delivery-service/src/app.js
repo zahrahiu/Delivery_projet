@@ -8,7 +8,7 @@ const { Eureka } = require('eureka-js-client');
 const promClient = require('prom-client');
 const startConsumer = require('./kafka/consumer');
 const { initDb } = require('./config/db');
-
+const { initProducer } = require('./services/deliveryService'); // 🔥 هنا
 const deliveryRoutes = require('./routes/deliveryRoutes');
 
 /* ===================== Swagger ===================== */
@@ -19,17 +19,15 @@ const app = express();
 
 promClient.collectDefaultMetrics({ register: promClient.register });
 
-
 app.use(cors());
 app.use(express.json());
-
 
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || 'localhost';
 const EUREKA_HOST = process.env.EUREKA_HOST || 'localhost';
 const EUREKA_PORT = process.env.EUREKA_PORT || 8761;
 
-app.get('/metrics', async (req, res) => { // رجعيه /metrics بلاصت /actuator/prometheus
+app.get('/metrics', async (req, res) => {
     res.set('Content-Type', promClient.register.contentType);
     res.end(await promClient.register.metrics());
 });
@@ -93,19 +91,23 @@ const client = new Eureka({
 });
 
 /* ===================== START SYSTEM ===================== */
-initDb()
-    .then(() => {
+const startServer = async () => {
+    try {
+        // 1. Initialize DB
+        await initDb();
+        console.log('✅ Database initialized');
 
-        // Kafka Consumer
-        startConsumer().catch(err =>
-            console.error("❌ Kafka Error:", err)
-        );
+        // 2. Initialize Kafka Producer
+        await initProducer();
+        console.log('✅ Kafka Producer initialized');
 
-        // Start server
+        // 3. Start Kafka Consumer
+        await startConsumer();
+        console.log('✅ Kafka Consumer started');
+
+        // 4. Start HTTP server
         app.listen(PORT, () => {
             console.log(`🚀 Delivery Service running on port ${PORT}`);
-
-            // Eureka register
             client.start((error) => {
                 if (error) {
                     console.error('❌ Eureka Error:', error);
@@ -114,9 +116,9 @@ initDb()
                 }
             });
         });
+    } catch (err) {
+        console.error('❌ Startup error:', err);
+    }
+};
 
-    })
-    .catch(err => {
-        console.error("❌ DB Init Error:", err);
-    });
-
+startServer();

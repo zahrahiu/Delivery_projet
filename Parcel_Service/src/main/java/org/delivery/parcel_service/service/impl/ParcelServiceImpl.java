@@ -96,13 +96,24 @@ public class ParcelServiceImpl implements ParcelService {
         return List.of();
     }
 
+
+
     @Override
+    @Transactional
     public void assignToLivreur(Long id, String livreurId) {
-        Parcel parcel = parcelRepository.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        Parcel parcel = parcelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parcel not found with id: " + id));
+
         parcel.setAssignedLivreurId(livreurId);
         parcel.setStatus(ParcelStatus.ASSIGNED);
-        parcelRepository.save(parcel);
+        Parcel saved = parcelRepository.save(parcel);
+
+        System.out.println("✅ Parcel " + id + " assigned to livreur " + livreurId);
+        System.out.println("   Status after save: " + saved.getStatus());
+        System.out.println("   AssignedLivreurId after save: " + saved.getAssignedLivreurId());
     }
+
+
 
     @Override
     public ParcelResponseDTO getParcelByTrackingNumber(String trackingNumber) {
@@ -281,7 +292,36 @@ public class ParcelServiceImpl implements ParcelService {
                 parcel.getSenderPhone());
     }
 
+    @Override
+    @Transactional
+    public void restartParcel(Long id) {
+        Parcel parcel = parcelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parcel not found with id: " + id));
 
+        // 🔥 تغيير status إلى PENDING
+        parcel.setStatus(ParcelStatus.PENDING);
+
+        // 🔥 حذف الـ livreur
+        parcel.setAssignedLivreurId(null);
+
+        parcelRepository.save(parcel);
+        System.out.println("✅ Parcel " + id + " restarted: status=PENDING, livreur=null");
+    }
+
+
+
+    @Override
+    @Transactional
+    public void unassignLivreur(Long id) {
+        Parcel parcel = parcelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parcel not found with id: " + id));
+
+        parcel.setAssignedLivreurId(null);
+        parcel.setStatus(ParcelStatus.PENDING);
+        parcelRepository.save(parcel);
+
+        System.out.println("✅ Livreur removed from parcel " + id);
+    }
 
 
 }

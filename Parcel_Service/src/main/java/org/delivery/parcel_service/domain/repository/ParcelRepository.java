@@ -12,5 +12,6 @@ public interface ParcelRepository extends JpaRepository<Parcel, Long> {
     List<Parcel> findByZoneId(String zoneId); // هادي ضرورية
     Optional<Parcel> findByTrackingNumber(String trackingNumber);
     List<Parcel> findByAssignedLivreurId(String assignedLivreurId);
+
     List<Parcel> findByClientEmail(String clientEmail); // خاص هاد clientEmail تكون هي نفسها اللي فـ الـ Entity
  }

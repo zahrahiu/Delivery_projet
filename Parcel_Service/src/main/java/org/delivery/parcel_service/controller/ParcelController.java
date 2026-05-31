@@ -58,13 +58,7 @@ public class ParcelController {
         return ResponseEntity.ok(parcelService.getParcels(principal));
     }
 
-    @Operation(summary = "Assigner un colis à un livreur", description = "Accessible par DISPATCHER ou ADMIN.")
-    @PatchMapping("/{id}/assign/{livreurId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_DISPATCHER', 'ROLE_ADMIN')")
-    public ResponseEntity<Void> assignParcel(@PathVariable Long id, @PathVariable String livreurId) {
-        parcelService.assignToLivreur(id, livreurId);
-        return ResponseEntity.noContent().build();
-    }
+
 
     @Operation(summary = "Mettre à jour le statut du colis", description = "Accessible par LIVREUR, DISPATCHER أو ADMIN.")
     @PatchMapping("/{id}/status")
@@ -133,5 +127,29 @@ public class ParcelController {
     public ResponseEntity<Void> cancelParcelByClient(@PathVariable Long id) {
         parcelService.cancelParcelByClient(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/restart")
+    @PreAuthorize("hasAnyAuthority('ROLE_DISPATCHER', 'ROLE_ADMIN')")
+    public ResponseEntity<Void> restartParcel(@PathVariable Long id) {
+        parcelService.restartParcel(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @Operation(summary = "Assigner un colis à un livreur", description = "Accessible par DISPATCHER ou ADMIN.")
+    @PatchMapping("/{id}/assign/{livreurId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_DISPATCHER', 'ROLE_ADMIN')")
+    public ResponseEntity<Void> assignParcel(@PathVariable Long id, @PathVariable String livreurId) {
+        parcelService.assignToLivreur(id, livreurId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // إضافة endpoint جديد لتعيين livreur ب null
+    @PatchMapping("/{id}/assign/null")
+    @PreAuthorize("hasAnyAuthority('ROLE_DISPATCHER', 'ROLE_ADMIN')")
+    public ResponseEntity<Void> unassignParcel(@PathVariable Long id) {
+        parcelService.unassignLivreur(id);
+        return ResponseEntity.noContent().build();
     }
 }

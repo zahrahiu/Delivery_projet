@@ -110,6 +110,7 @@ const AdminDashboard: React.FC = () => {
                 { name: 'Livré', value: delivered, color: '#00C49F' },
             ]);
 
+            // حساب إحصائيات الكتاب (Performance Livreurs)
             const livreurStats: any = {};
             livreursList.forEach((l: any) => {
                 const name = l.firstName === l.lastName ? l.firstName : `${l.firstName} ${l.lastName}`;
@@ -132,11 +133,13 @@ const AdminDashboard: React.FC = () => {
                 .slice(0, 5);
             setLivreurPerformance(perfData);
 
+            // آخر 5 كوليس
             const sortedParcels = [...parcels].sort((a: any, b: any) =>
                 new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime()
             );
             setRecentParcels(sortedParcels.slice(0, 5));
 
+            // Top 5 مدن
             const cityCount: any = {};
             parcels.forEach((p: any) => {
                 const city = p.cityName || 'Inconnue';
@@ -148,18 +151,35 @@ const AdminDashboard: React.FC = () => {
                 .map(([name, value]) => ({ name, value }));
             setTopVilles(top5);
 
+            // 🔥🔥🔥 الجزء المصحح ديال Colis (7 jours) 🔥🔥🔥
             const days: any = {};
             const today = new Date();
+
+            // إنشاء الأيام السبعة الأخيرة
             for (let i = 6; i >= 0; i--) {
                 const d = new Date(today);
                 d.setDate(today.getDate() - i);
-                days[d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })] = 0;
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const key = `${day}/${month}`;
+                days[key] = 0;
             }
+
+            // عد الكوليس حسب التاريخ من DB
             parcels.forEach((p: any) => {
-                const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) : today.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-                if (days[date] !== undefined) days[date]++;
-                else days[today.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })]++;
+                if (p.createdAt) {
+                    // ناخذ التاريخ من DB: "2026-05-29 21:44:48.687841"
+                    const datePart = p.createdAt.split('T')[0]; // "2026-05-29"
+                    const parts = datePart.split('-'); // ["2026", "05", "29"]
+                    const formattedDate = `${parts[2]}/${parts[1]}`; // "29/05"
+
+                    if (days[formattedDate] !== undefined) {
+                        days[formattedDate]++;
+                    }
+                }
             });
+
             setDailyStats(Object.entries(days).map(([date, colis]) => ({ date, colis })));
 
         } catch (error) {

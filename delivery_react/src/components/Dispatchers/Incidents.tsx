@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
     FaExclamationTriangle, FaTimesCircle, FaCheckCircle,
-    FaSpinner, FaEye, FaComment, FaClock, FaBox, FaRedo, FaBan,
-    FaEnvelope, FaPhoneAlt, FaWhatsapp, FaBell
+    FaSpinner, FaEye, FaClock, FaBox, FaRedo,
+    FaEnvelope, FaPhoneAlt
 } from "react-icons/fa";
 import Sidebar from "../common/Sidebar";
 import TopHeader from "../common/TopHeader";
@@ -149,14 +149,11 @@ const Incidents: React.FC = () => {
         }
     };
 
-    // 🔥🔥🔥 دالة handleRestartDelivery المصححة - تمسح الـ livreur وتغير status 🔥🔥🔥
-    // ... باقي الكود كما هو ...
-
-// 🔥🔥🔥 دالة handleRestartDelivery المصححة - تمسح الـ livreur وتغير status 🔥🔥🔥
+    // 🔥 دالة handleRestartDelivery المحدثة - تستخدم parcel-service مباشرة
     const handleRestartDelivery = async (incident: Incident) => {
         const result = await Swal.fire({
             title: '🔄 Reprendre la livraison',
-            text: `Voulez-vous remettre le colis ${incident.trackingNumber} en attente pour le réassigner ?`,
+            text: `Voulez-vous remettre le colis ${incident.trackingNumber} en attente ?`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#f39c12',
@@ -184,16 +181,17 @@ const Incidents: React.FC = () => {
                 Swal.fire({
                     icon: 'success',
                     title: '✅ Colis repris',
-                    text: 'Le colis peut maintenant être réassigné à un livreur',
+                    text: 'Le colis est maintenant en attente sans livreur',
                     timer: 2000
                 });
 
                 await fetchIncidents();
-                window.dispatchEvent(new Event('parcelsUpdated'));
+                window.dispatchEvent(new CustomEvent('parcelsUpdated'));
 
             } catch (err: any) {
-                console.error("Erreur détaillée:", err.response?.data || err.message);
-                // 🔥 إذا فشل PATCH assign/null، جرب PUT
+                console.error("❌ Erreur détaillée:", err.response?.data);
+
+                // 🔥 إذا فشل PATCH، جرب PUT
                 try {
                     const originalParcel = allParcels.find(p => p.id === incident.id);
                     if (originalParcel) {
@@ -220,12 +218,12 @@ const Incidents: React.FC = () => {
                         Swal.fire({
                             icon: 'success',
                             title: '✅ Colis repris',
-                            text: 'Le colis peut maintenant être réassigné à un livreur',
+                            text: 'Le colis est maintenant en attente sans livreur',
                             timer: 2000
                         });
 
                         await fetchIncidents();
-                        window.dispatchEvent(new Event('parcelsUpdated'));
+                        window.dispatchEvent(new CustomEvent('parcelsUpdated'));
                     }
                 } catch (putError) {
                     Swal.fire('Erreur', 'Impossible de reprendre le colis', 'error');

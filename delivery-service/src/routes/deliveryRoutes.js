@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { assignDelivery } = require('../controllers/deliveryController');
 const authMiddleware = require("../middlewares/auth");
 const hasRole = require("../middlewares/hasRole");
-
+const { assignDelivery, unassignDelivery } = require('../controllers/deliveryController');
 /**
  * @swagger
  * /api/deliveries/{trackingNumber}/assign:
@@ -33,6 +32,31 @@ router.post('/:trackingNumber/assign',
     authMiddleware,
     hasRole('ROLE_DISPATCHER'),
     assignDelivery
+);
+
+/**
+ * @swagger
+ * /api/deliveries/{trackingNumber}/unassign:
+ *   patch:
+ *     summary: Remove livreur assignment from delivery
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: trackingNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Livreur unassigned successfully
+ *       403:
+ *         description: Unauthorized
+ */
+router.patch('/:trackingNumber/unassign',
+    authMiddleware,
+    hasRole('ROLE_DISPATCHER'),
+    unassignDelivery  // 🔥 هنا
 );
 
 module.exports = router;

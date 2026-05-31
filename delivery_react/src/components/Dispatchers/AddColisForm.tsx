@@ -255,13 +255,17 @@ const AddColisForm: React.FC<AddColisProps> = ({ onCancel }) => {
 
         setLoading(true);
         try {
-            await axios.patch(`${PARCELS_API}/${createdParcel.id}/assign/${selectedDriver}`, {}, getHeaders());
-            await axios.patch(`${PARCELS_API}/${createdParcel.id}/status?status=ASSIGNED`, {}, getHeaders());
+            // 🔥 استعمل Delivery Service
+            const DELIVERY_API = "http://localhost:8888/delivery-service/api/deliveries";
+
+            await axios.post(`${DELIVERY_API}/${createdParcel.trackingNumber}/assign`, {
+                livreurId: selectedDriver
+            }, getHeaders());
 
             Swal.fire({
                 icon: 'success',
                 title: '✅ Colis Assigné !',
-                text: `Le colis ${createdParcel.trackingNumber} est maintenant assigné.\nStatut: ASSIGNED`,
+                text: `Le colis ${createdParcel.trackingNumber} est maintenant assigné.`,
                 confirmButtonColor: '#3182ce'
             });
             onCancel();
